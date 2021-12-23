@@ -9,11 +9,7 @@ namespace KellphyBot
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#pragma warning disable ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
-            var serviceProvider = services.BuildServiceProvider();
-#pragma warning restore ASP0000
-            var bot = new Bot(serviceProvider);
-            services.AddSingleton(bot);
+            services.AddSingleton(new Bot(services.BuildServiceProvider()));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

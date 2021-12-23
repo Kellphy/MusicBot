@@ -18,7 +18,7 @@ namespace DiscordBot.Commands
             _services = services;
         }
 
-        LinkedList<TrackDetails> trackList = new LinkedList<TrackDetails>();
+        static LinkedList<TrackDetails> trackList = new LinkedList<TrackDetails>();
 
         public enum VoiceAction
         {
@@ -33,7 +33,7 @@ namespace DiscordBot.Commands
         public struct TrackDetails
         {
             public ulong ChannelId;
-            public string Username;
+            public DiscordMember Member;
             public string Link;
             public string Title;
         }
@@ -83,10 +83,10 @@ namespace DiscordBot.Commands
             await Play(ctx.Client, ctx.Guild, ctx.Channel, ctx.Member, searchTitles);
         }
         public async Task Play(DiscordClient client, DiscordGuild guild, DiscordChannel channel, DiscordMember member, string searchTitles)
-        {
+        {  
             if (member.VoiceState == null || member.VoiceState.Channel == null)
             {
-                await channel.SendMessageAsync($"{member.Username}, you are not in a voice channel.");
+                await channel.SendMessageAsync($"{member.Mention}, you are not in a voice channel.");
                 return;
             }
 
@@ -94,7 +94,7 @@ namespace DiscordBot.Commands
             var lava = client.GetLavalink();
             if (!lava.ConnectedNodes.Any())
             {
-                await channel.SendMessageAsync($"{member.Username}, the Lavalink connection is not established");
+                await channel.SendMessageAsync($"{member.Mention}, the Lavalink connection is not established");
                 return;
             }
 
@@ -105,19 +105,25 @@ namespace DiscordBot.Commands
                 RemoveTracks();
             }
 
+            if (node.ConnectedGuilds.Count > 1 || (node.ConnectedGuilds.Count == 1 && node.ConnectedGuilds.First().Value.Guild.Id != guild.Id))
+            {
+                await channel.SendMessageAsync($"{member.Mention}, you are trying to connect to more than 1 server.This is not currently supported. Please launch another instance of this bot.");
+                return;
+            }
+
             await node.ConnectAsync(channelVoice);
 
             var conn = node.GetGuildConnection(guild);
 
             if (conn == null)
             {
-                await channel.SendMessageAsync($"{member.Username}, Lavalink is not connected.");
+                await channel.SendMessageAsync($"{member.Mention}, Lavalink is not connected.");
                 return;
             }
 
             if (member.VoiceState.Channel != conn.Channel)
             {
-                await channel.SendMessageAsync($"{member.Username}, the bot is in a different voice channel.");
+                await channel.SendMessageAsync($"{member.Mention}, the bot is in a different voice channel.");
                 return;
             }
 
@@ -141,7 +147,7 @@ namespace DiscordBot.Commands
                 }
                 if (found == false)
                 {
-                    await channel.SendMessageAsync($"{member.Username}, track search failed for {search}");
+                    await channel.SendMessageAsync($"{member.Mention}, track search failed for {search}");
                     int songCount = TrackCount();
                     if (conn.IsConnected && songCount < 1)
                     {
@@ -171,7 +177,7 @@ namespace DiscordBot.Commands
                         conn.DiscordWebSocketClosed += DiscordWebSocketClosed;
                         await conn.PlayAsync(track);
 
-                        AddTracks(channel.Id, member.Username, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title });
+                        AddTracks(channel.Id, member, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title });
 
                         await SendEmbedWithButtoms(channel, SongEmbed(track, "Playing", member.Username));
                     }
@@ -190,7 +196,7 @@ namespace DiscordBot.Commands
                     }
                 }
 
-                AddTracks(channel.Id, member.Username, tracksToQueue, trackTitles);
+                AddTracks(channel.Id, member, tracksToQueue, trackTitles);
             }
             if (queuedSongs > 0)
             {
@@ -239,25 +245,25 @@ namespace DiscordBot.Commands
 
             if (conn == null)
             {
-                await channel.SendMessageAsync($"{member.Username}, Lavalink is not connected.");
+                await channel.SendMessageAsync($"{member.Mention}, Lavalink is not connected.");
                 return;
             }
 
             if (conn.CurrentState.CurrentTrack == null)
             {
-                await channel.SendMessageAsync($"{member.Username}, there are no tracks loaded.");
+                await channel.SendMessageAsync($"{member.Mention}, there are no tracks loaded.");
                 return;
             }
 
             if (member.VoiceState == null || member.VoiceState.Channel == null)
             {
-                await channel.SendMessageAsync($"{member.Username}, you are not in a voice channel.");
+                await channel.SendMessageAsync($"{member.Mention}, you are not in a voice channel.");
                 return;
             }
 
             if (member.VoiceState.Channel != conn.Channel)
             {
-                await channel.SendMessageAsync($"{member.Username}, the bot is in a different voice channel.");
+                await channel.SendMessageAsync($"{member.Mention}, the bot is in a different voice channel.");
                 return;
             }
 
@@ -350,11 +356,11 @@ namespace DiscordBot.Commands
                     if (loadResult.LoadResultType != LavalinkLoadResultType.LoadFailed && loadResult.LoadResultType != LavalinkLoadResultType.NoMatches)
                     {
                         await sender.PlayAsync(loadResult.Tracks.FirstOrDefault());
-                        await SendEmbedWithButtoms(channel, SongEmbed(loadResult.Tracks.FirstOrDefault(), "Playing", queuedTrack.Username));
+                        await SendEmbedWithButtoms(channel, SongEmbed(loadResult.Tracks.FirstOrDefault(), "Playing", queuedTrack.Member.Username));
                     }
                     else
                     {
-                        await channel.SendMessageAsync($"{queuedTrack.Username}, track search failed for {queuedTrack.Link}");
+                        await channel.SendMessageAsync($"{queuedTrack.Member.Mention}, track search failed for {queuedTrack.Link}");
                     }
                 }
                 else
@@ -438,11 +444,11 @@ namespace DiscordBot.Commands
         {
             trackList.RemoveFirst();
         }
-        private void AddTracks(ulong channelId, string username, List<string> tracks, List<string> titles)
+        private void AddTracks(ulong channelId, DiscordMember member, List<string> tracks, List<string> titles)
         {
             for (int i = 0; i < tracks.Count; i++)
             {
-                trackList.AddLast(new TrackDetails() { ChannelId = channelId, Username = username, Link = tracks[i], Title = titles[i] });
+                trackList.AddLast(new TrackDetails() { ChannelId = channelId, Member = member, Link = tracks[i], Title = titles[i] });
             }
         }
 

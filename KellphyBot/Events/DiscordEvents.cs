@@ -76,7 +76,6 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.EventName}", $"{e.Exception.Message}");
                 DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
                 await Task.CompletedTask;
             }
@@ -86,7 +85,6 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}");
                 DataMethods.SendLogs($"WebSocket Open");
                 await Task.CompletedTask;
             }
@@ -96,7 +94,6 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}");
                 DataMethods.SendLogs($"Resumed");
                 await Task.CompletedTask;
             }
@@ -106,7 +103,6 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}");
                 DataMethods.SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
                 await Task.CompletedTask;
             }
@@ -117,8 +113,7 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
-                DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} {e.Guild.Id}");
+                DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} ({e.Guild.Id})");
                 await Task.CompletedTask;
             }
             catch { }
@@ -129,7 +124,6 @@ namespace KellphyBot.Events
             try
             {
                 DataMethods.SendLogs($"{e.GetType().Name}");
-                DataMethods.SendLogs("Bot Loading Completed!");
                 await Task.CompletedTask;
             }
             catch { }
@@ -138,7 +132,12 @@ namespace KellphyBot.Events
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
+                Console.Write($"\u001b[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - ");
+                Console.Write($"\u001b[36m{e.User.Username}#{e.User.Discriminator} ({e.User.Id}) ");
+                Console.Write($"\u001b[32m{e.Guild.Name} ({e.Guild.Id}) ");
+                Console.Write($"\u001b[35m{e.Channel.Name} ({e.Channel.Id}) ");
+                Console.Write($"\u001b[0m\n");
+
                 List<string> to_compare = new List<string> { "voice" };
 
                 for (int i = 0; i < to_compare.Count; i++)

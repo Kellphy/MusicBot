@@ -14,3 +14,7 @@ dotnet_diagnostic.IDE0008WithoutSuggestion.severity = none
 dotnet_diagnostic.IDE1006.severity = none
 
 dotnet_diagnostic.IDE1006WithoutSuggestion.severity = none
+
+dotnet_diagnostic.ASP0000.severity = none
+
+dotnet_diagnostic.ASP0000WithoutSuggestion.severity = none
