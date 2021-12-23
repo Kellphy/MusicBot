@@ -28,14 +28,23 @@ namespace DiscordBot
         ConfigJson configJson;
         public Bot(IServiceProvider services)
         {
-            new DataMethods().SendKellphy();
-            new DataMethods().SendLogs("Reading config for token and prefix ...");
+            DataMethods.SendKellphy();
             //Config.json
             var json = string.Empty;
             using (var fs = File.OpenRead("config.json"))
             using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
                 json = sr.ReadToEnd();
             configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+
+            if(configJson.Token.Length < 30)
+            {
+                DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating.");
+            }
+            if (configJson.Prefix.Length > 5)
+            {
+                DataMethods.SendErrorLogs($"Are you sure you want a prefix that long? It's currently set to: \"{configJson.Prefix}\".");
+            }
+
             var config = new DiscordConfiguration
             {
                 Token = configJson.Token,
@@ -119,12 +128,12 @@ namespace DiscordBot
             var lavalink = Client.UseLavalink();
             await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after Discord.ConnectAsync(). 
 
-            new DataMethods().SendLogs(">>>>> FINISHED LAVALINK");
+            DataMethods.SendLogs("Lavalink Connected!");
         }
 
         private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
         {
-            new DataMethods().SendLogs(new MyContext(e.Context));
+            DataMethods.SendLogs(new MyContext(e.Context));
             await Task.CompletedTask;
         }
         private async Task OnSlashCommandError(SlashCommandsExtension sender, SlashCommandErrorEventArgs e)
@@ -136,16 +145,16 @@ namespace DiscordBot
             }
             else if (e.Exception is ChecksFailedException)
             {
-                await e.Context.Channel.SendMessageAsync("`WARNING: You do not have the required permissions or you keep spamming the command.`");
+                DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions or you keep spamming the command.");
             }
             else
             {
-                new DataMethods().SendLogs($"##### {e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
+                DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
             }
         }
         private async Task OncommandExecute(CommandsNextExtension sender, CommandExecutionEventArgs e)
         {
-            new DataMethods().SendLogs(new MyContext(e.Context));
+            DataMethods.SendLogs(new MyContext(e.Context));
             await Task.CompletedTask;
         }
         private async Task OnCommandError(CommandsNextExtension sender, CommandErrorEventArgs e)
@@ -160,16 +169,16 @@ namespace DiscordBot
                 var firstCheck = e.Command.ExecutionChecks[0];
                 if (firstCheck is DSharpPlus.CommandsNext.Attributes.CooldownAttribute)
                 {
-                    new DataMethods().SendLogs("WARNING: The command is on cooldown.");
+                    DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, the command is on cooldown.");
                 }
                 else if (firstCheck is DSharpPlus.CommandsNext.Attributes.RequireUserPermissionsAttribute)
                 {
-                    new DataMethods().SendLogs("WARNING: You do not have the required permissions to use this command.");
+                    DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions to use this command.");
                 }
             }
             else
             {
-                new DataMethods().SendLogs($"##### {e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | {e.Context.Message.Content} | Error: {e.Exception}");
+                DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | {e.Context.Message.Content} | Error: {e.Exception}");
             }
         }
         private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)

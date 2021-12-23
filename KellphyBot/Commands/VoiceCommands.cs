@@ -195,7 +195,7 @@ namespace DiscordBot.Commands
             if (queuedSongs > 0)
             {
                 string songOrSongs = queuedSongs == 1 ? "song" : "songs";
-                await channel.SendMessageAsync(DataMethods.Instance.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"));
+                await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"));
             }
         }
 
@@ -281,7 +281,7 @@ namespace DiscordBot.Commands
                     return;
             }
 
-            await channel.SendMessageAsync(DataMethods.Instance.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
+            await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
 
             switch (action)
             {
@@ -320,7 +320,7 @@ namespace DiscordBot.Commands
             {
                 queueList = "No songs in queue.";
             }
-            await channel.SendMessageAsync(DataMethods.Instance.SimpleEmbed("Queue", queueList));
+            await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queue", queueList));
         }
 
         private async Task DiscordWebSocketClosed(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.WebSocketCloseEventArgs e)
@@ -370,7 +370,7 @@ namespace DiscordBot.Commands
             {
                 TrackDetails queuedTrack = GetTrack();
                 DiscordChannel channel = sender.Guild.GetChannel(queuedTrack.ChannelId);
-                await channel.SendMessageAsync(DataMethods.Instance.SimpleEmbed($"{reason} Disconnected."));
+                await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{reason} Disconnected."));
             }
             RemoveTracks();
             sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;

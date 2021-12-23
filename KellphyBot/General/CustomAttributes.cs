@@ -5,7 +5,7 @@
 public static class CustomStrings
 {
     public const string embedLinks =
-        "[Server](https://discord.gg/ycYmMmP)" +
+        "[Server](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
         " | [Patreon](https://www.kellphy.com/patreon)" +
         " | [Get Bot](https://github.com/Kellphy/MusicBot/releases)";

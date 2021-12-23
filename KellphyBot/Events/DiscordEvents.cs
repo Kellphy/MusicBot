@@ -76,8 +76,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.EventName}", $"{e.Exception.Message}");
-                new DataMethods().SendLogs($"<<<<< Client Error: {e.EventName} {e.Exception}");
+                DataMethods.SendLogs($"{e.EventName}", $"{e.Exception.Message}");
+                DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
                 await Task.CompletedTask;
             }
             catch { }
@@ -86,8 +86,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}");
-                new DataMethods().SendLogs($"WebSocket Open");
+                DataMethods.SendLogs($"{e.GetType().Name}");
+                DataMethods.SendLogs($"WebSocket Open");
                 await Task.CompletedTask;
             }
             catch { }
@@ -96,8 +96,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}");
-                new DataMethods().SendLogs($"Resumed");
+                DataMethods.SendLogs($"{e.GetType().Name}");
+                DataMethods.SendLogs($"Resumed");
                 await Task.CompletedTask;
             }
             catch { }
@@ -106,8 +106,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}");
-                new DataMethods().SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
+                DataMethods.SendLogs($"{e.GetType().Name}");
+                DataMethods.SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
                 await Task.CompletedTask;
             }
             catch { }
@@ -117,8 +117,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
-                new DataMethods().SendLogs($"<<<<< Guild Unavailable: {e.Guild.Name} {e.Guild.Id}");
+                DataMethods.SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
+                DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} {e.Guild.Id}");
                 await Task.CompletedTask;
             }
             catch { }
@@ -128,8 +128,8 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}");
-                new DataMethods().SendLogs(">>>>> FINISHED ALL STREAMS!");
+                DataMethods.SendLogs($"{e.GetType().Name}");
+                DataMethods.SendLogs("Bot Loading Completed!");
                 await Task.CompletedTask;
             }
             catch { }
@@ -138,7 +138,7 @@ namespace KellphyBot.Events
         {
             try
             {
-                new DataMethods().SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
+                DataMethods.SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
                 List<string> to_compare = new List<string> { "voice" };
 
                 for (int i = 0; i < to_compare.Count; i++)
@@ -190,12 +190,6 @@ namespace KellphyBot.Events
                 }
             }
             catch { }
-        }
-        private string InteractionID(ComponentInteractionCreateEventArgs e, int prefix, int to_compare_length)
-        {
-            new DataMethods().SendLogs($"{e.GetType().Name}", $"{e.Guild.Name} {e.Guild.Id}");
-            if (e.Values.Length > 0) return e.Values.FirstOrDefault().Substring(prefix + to_compare_length + 1);//Select Menu
-            else return e.Id.Substring(prefix + to_compare_length + 1);//Button
         }
     }
 }
