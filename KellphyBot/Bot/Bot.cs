@@ -28,6 +28,7 @@ namespace DiscordBot
         ConfigJson configJson;
         public Bot(IServiceProvider services)
         {
+            new DataMethods().SendKellphy();
             new DataMethods().SendLogs("Reading config for token and prefix ...");
             //Config.json
             var json = string.Empty;

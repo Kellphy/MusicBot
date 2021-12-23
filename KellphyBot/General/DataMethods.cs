@@ -48,5 +48,9 @@ namespace DiscordBot
             }
             Console.WriteLine($"\u001B[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - \u001b[33m{eventName}\u001b[0m" + eventDetails);
         }
+        public void SendKellphy()
+        {
+            Console.WriteLine($"\u001B[36m{CustomStrings.kellphy}\u001b[0m");
+        }
     }
 }
