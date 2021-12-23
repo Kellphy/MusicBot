@@ -9,8 +9,6 @@ namespace KellphyBot
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            //can replace serverVersion with ServerVersion.AutoDetect(connectionString)
-
 #pragma warning disable ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
             var serviceProvider = services.BuildServiceProvider();
 #pragma warning restore ASP0000

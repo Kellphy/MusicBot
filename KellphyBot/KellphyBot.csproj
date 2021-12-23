@@ -5,6 +5,14 @@
 	  <TargetFramework>net5.0</TargetFramework>
 	  <UserSecretsId>fcb05303-9a89-464b-8f43-50ba7cdedc18</UserSecretsId>
 	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	  <ApplicationIcon>icon2.ico</ApplicationIcon>
+	  <SignAssembly>false</SignAssembly>
+	  <NoWin32Manifest>true</NoWin32Manifest>
+	  <PackageId>MusicBot</PackageId>
+	  <Product>MusicBot</Product>
+	  <Company>Kellphy</Company>
+	  <Authors>Kellphy</Authors>
+	  <PackageProjectUrl>https://github.com/Kellphy/MusicBot</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
