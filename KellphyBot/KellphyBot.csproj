@@ -13,6 +13,7 @@
 	  <Company>Kellphy</Company>
 	  <Authors>Kellphy</Authors>
 	  <PackageProjectUrl>https://github.com/Kellphy/MusicBot</PackageProjectUrl>
+	  <AssemblyName>MusicBot</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
