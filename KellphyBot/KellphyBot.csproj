@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+	  <TargetFramework>net5.0</TargetFramework>
+	  <UserSecretsId>fcb05303-9a89-464b-8f43-50ba7cdedc18</UserSecretsId>
+	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01042" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0-nightly-01042" />
+    <PackageReference Include="DSharpPlus.Lavalink" Version="4.2.0-nightly-01042" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01042" />
+  </ItemGroup>
+
+</Project>
