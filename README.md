@@ -1,6 +1,6 @@
 # Discord Music Bot based on Lavalink  
 1. Make sure you downloaded the **MusicBot.zip** archive.
-2. Get Java 13+. If you don't know which one to get, download and install the **x64 Installer** from https://www.oracle.com/java/technologies/downloads/#jdk17-windows  
+2. Get Java 13+. If you don't know which one to get, download and install the [**x64 Installer**](https://www.oracle.com/java/technologies/downloads/#jdk17-windows)   
 3. Go to https://discord.com/developers/applications  
    - 3.1. How to get your token.  
       - 3.1.1. Create a **New Application**.  
