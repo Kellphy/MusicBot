@@ -11,9 +11,10 @@
    - 3.2. How to invite the bot.  
       - 3.2.1. On the left side, click on **OAuth2** > **URL Generator**.  
       - 3.2.2. Click on **Bot (Scopes)** > **Administrator (Bot permisisons)**.  
-      - 3.2.3. Scroll down and click on **Copy**, that's your bot invite link.  
+      - 3.2.3. Scroll down and click on **Copy**, that's your bot invite link. 
+      - 3.2.4. Paste the link in your browser window, and select your server. 
 4. Go to your downloaded files, and open **config.json**, update your **token** and set a **prefix**.  
-5. Launch the bot from the **Start.bat**.  
+5. Launch the bot from the **Start.bat**, not the **MusicBot.exe**.  
 6. Profit.  
 
 [Discord Server](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) | [Get Bot](https://github.com/Kellphy/MusicBot/releases)  
