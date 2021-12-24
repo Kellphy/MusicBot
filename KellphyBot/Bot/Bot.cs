@@ -51,7 +51,7 @@ namespace DiscordBot
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Error,
-                Intents = DiscordIntents.All,
+                Intents = DiscordIntents.AllUnprivileged,
             };
 
             Client = new DiscordClient(config);
