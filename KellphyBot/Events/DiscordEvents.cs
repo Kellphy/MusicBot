@@ -5,7 +5,10 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace KellphyBot.Events
@@ -119,14 +122,43 @@ namespace KellphyBot.Events
             catch { }
         }
 
+        Regex[] regexS = new Regex[]
+        {
+            new Regex("<a href=\"/Kellphy/MusicBot/releases/tag/(?<version>.*?)\">")
+        };
         async void GuildDownloadCompletedMethod(DiscordClient client, GuildDownloadCompletedEventArgs e)
         {
             try
             {
                 DataMethods.SendLogs($"{e.GetType().Name}");
-                await Task.CompletedTask;
+
+                using (Stream stream = WebRequest.Create($"https://github.com/Kellphy/MusicBot/tags").GetResponse().GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string html = reader.ReadToEnd();
+                        foreach (Regex regex in regexS)
+                        {
+                            MatchCollection matches = regex.Matches(html);
+                            if (matches.Count > 0 && matches.First().Success)
+                            {
+                                var newVersion = matches.First().Groups["version"].ToString();
+                                if (newVersion != CustomStrings.version)
+                                {
+                                    foreach (var owner in client.CurrentApplication.Owners)
+                                    {
+                                        var member = await e.Guilds.First().Value.GetMemberAsync(owner.Id);
+                                        await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Please download the lastest version!](https://github.com/Kellphy/MusicBot/releases)"));
+                                        DataMethods.SendErrorLogs($"Upgrade available from {CustomStrings.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             catch { }
+            await Task.CompletedTask;
         }
         async void InteractionCreatedMethod(DiscordClient client, ComponentInteractionCreateEventArgs e)
         {

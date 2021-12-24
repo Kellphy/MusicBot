@@ -4,6 +4,7 @@
 }
 public static class CustomStrings
 {
+    public const string version = "1.4";
     public const string embedLinks =
         "[Server](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +

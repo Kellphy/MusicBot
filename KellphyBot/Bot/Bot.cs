@@ -29,6 +29,7 @@ namespace DiscordBot
         public Bot(IServiceProvider services)
         {
             DataMethods.SendKellphy();
+            DataMethods.SendLogs($"Version: {CustomStrings.version}");
             //Config.json
             var json = string.Empty;
             using (var fs = File.OpenRead("config.json"))
