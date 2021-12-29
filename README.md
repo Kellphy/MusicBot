@@ -8,7 +8,8 @@
       - 3.1.3. Click on **Add Bot** > **Yes, do it**.  
       - 3.1.4. Under **Token**, click on **Copy**, that's your token.  
       - 3.1.5. Feel free to customize your bot's appearance.  
-      - 3.1.6. Go to your downloaded files, open **config**, update your **token**, and set a **prefix**.  
+      - 3.1.6. Go to your downloaded files, open "**_config**", insert your **token**, and set a **prefix**.  
+      - 3.1.7. Rename the file "**_config**" to "**config**".  
    - 3.2. Invite the bot.  
       - 3.2.1. On the left side, click on **OAuth2** > **URL Generator**.  
       - 3.2.2. Click on **Bot (Scopes)** > **Administrator (Bot permisisons)**.  
