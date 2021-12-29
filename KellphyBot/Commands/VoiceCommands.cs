@@ -36,6 +36,7 @@ namespace DiscordBot.Commands
             public DiscordMember Member;
             public string Link;
             public string Title;
+            public TimeSpan Length;
         }
 
         public struct HardLinks
@@ -83,7 +84,7 @@ namespace DiscordBot.Commands
             await Play(ctx.Client, ctx.Guild, ctx.Channel, ctx.Member, searchTitles);
         }
         public async Task Play(DiscordClient client, DiscordGuild guild, DiscordChannel channel, DiscordMember member, string searchTitles)
-        {  
+        {
             if (member.VoiceState == null || member.VoiceState.Channel == null)
             {
                 await channel.SendMessageAsync($"{member.Mention}, you are not in a voice channel.");
@@ -167,6 +168,7 @@ namespace DiscordBot.Commands
                 }
                 List<string> tracksToQueue = new List<string>();
                 List<string> trackTitles = new List<string>();
+                List<TimeSpan> trackLengths = new List<TimeSpan>();
                 foreach (LavalinkTrack track in trackList)
                 {
                     int songCount = TrackCount();
@@ -177,7 +179,8 @@ namespace DiscordBot.Commands
                         conn.DiscordWebSocketClosed += DiscordWebSocketClosed;
                         await conn.PlayAsync(track);
 
-                        AddTracks(channel.Id, member, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title });
+                        //For the first song
+                        AddTracks(channel.Id, member, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title }, new List<TimeSpan>() { track.Length });
 
                         await SendEmbedWithButtoms(channel, SongEmbed(track, "Playing", member.Username));
                     }
@@ -185,7 +188,8 @@ namespace DiscordBot.Commands
                     {
                         if (searchArr.Length < 2 && trackList.Count() < 2)
                         {
-                            await channel.SendMessageAsync(SongEmbed(track, $"Queued", member.Username));
+                            DiscordMessage messageToDelete = await channel.SendMessageAsync(SongEmbed(track, $"Queued", member.Username));
+                            DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
                         }
                         else
                         {
@@ -193,15 +197,18 @@ namespace DiscordBot.Commands
                         }
                         tracksToQueue.Add(track.Uri.ToString());
                         trackTitles.Add(track.Title);
+                        trackLengths.Add(track.Length);
                     }
                 }
 
-                AddTracks(channel.Id, member, tracksToQueue, trackTitles);
+                //For the queue
+                AddTracks(channel.Id, member, tracksToQueue, trackTitles, trackLengths);
             }
             if (queuedSongs > 0)
             {
                 string songOrSongs = queuedSongs == 1 ? "song" : "songs";
-                await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"));
+                DiscordMessage messageToDelete = await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"));
+                DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
             }
         }
 
@@ -287,7 +294,8 @@ namespace DiscordBot.Commands
                     return;
             }
 
-            await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
+            /*DiscordMessage messageToDelete =*/ await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
+            //DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(10));
 
             switch (action)
             {
@@ -319,14 +327,15 @@ namespace DiscordBot.Commands
             for (int i = 0; i < maxQueue; i++)
             {
                 string prefix = i == 0 ? "Playing" : i.ToString();
-                queueList += $"[{prefix}] - {trackList.ElementAt(i).Title}\n";
+                queueList += $"[{prefix}] - [{trackList.ElementAt(i).Length}] {trackList.ElementAt(i).Title}\n";
             }
             if (TrackCount() > maxQueueInt) queueList += $"**+ {TrackCount() - maxQueueInt} more**";
             if (queueList.Length < 1)
             {
                 queueList = "No songs in queue.";
             }
-            await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queue", queueList));
+            DiscordMessage messageToDelete = await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queue", queueList));
+            DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(30));
         }
 
         private async Task DiscordWebSocketClosed(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.WebSocketCloseEventArgs e)
@@ -393,16 +402,18 @@ namespace DiscordBot.Commands
 
         DiscordEmbed SongEmbed(LavalinkTrack track, string playing, string user)
         {
+            string playingTimer = string.Empty;
+            if (playing == "Playing") playingTimer = "\nEnds " + DataMethods.UnixUntil(DateTime.Now + track.Length);
             return new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
                 {
-                    Name = $"{playing} [{track.Length}] - Queued by {user}"
+                    Name = track.Title + $" ({track.Author}) [{track.Length}]"
                 },
-                Title = track.Title + $" ({track.Author})",
+                Title = $"{playingTimer}",
                 Footer = new DiscordEmbedBuilder.EmbedFooter
                 {
-                    Text = $"If the queue bugs, force disconnect the bot to reset."
+                    Text = $"Queued by {user}"
                 },
                 Description = $"{track.Uri}",
                 Color = playing == "Playing" ? DiscordColor.DarkGreen : DiscordColor.Orange
@@ -444,15 +455,16 @@ namespace DiscordBot.Commands
         {
             trackList.RemoveFirst();
         }
-        private void AddTracks(ulong channelId, DiscordMember member, List<string> tracks, List<string> titles)
+        private void AddTracks(ulong channelId, DiscordMember member, List<string> tracks, List<string> titles, List<TimeSpan> lengths)
         {
             for (int i = 0; i < tracks.Count; i++)
             {
-                trackList.AddLast(new TrackDetails() { ChannelId = channelId, Member = member, Link = tracks[i], Title = titles[i] });
+                trackList.AddLast(new TrackDetails() { ChannelId = channelId, Member = member, Link = tracks[i], Title = titles[i], Length = lengths[i] });
             }
         }
 
-        [Command("help")]
+
+    [Command("help")]
         [Cooldown(1, 2, CooldownBucketType.User)]
         public async Task Help_CC(CommandContext ctx, string commandDef = "help")
         {

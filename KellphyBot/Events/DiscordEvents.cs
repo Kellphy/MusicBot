@@ -148,7 +148,7 @@ namespace KellphyBot.Events
                                     foreach (var owner in client.CurrentApplication.Owners)
                                     {
                                         var member = await e.Guilds.First().Value.GetMemberAsync(owner.Id);
-                                        await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Please download the lastest version!](https://github.com/Kellphy/MusicBot/releases)"));
+                                        await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only thing that you want to keep between updates is your **config** file."));
                                         DataMethods.SendErrorLogs($"Upgrade available from {CustomStrings.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
                                     }
                                 }

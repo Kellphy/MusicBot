@@ -1,6 +1,6 @@
 ﻿using DSharpPlus.Entities;
 using System;
-
+using System.Threading.Tasks;
 
 namespace DiscordBot
 {
@@ -43,6 +43,25 @@ namespace DiscordBot
         public static void SendKellphy()
         {
             Console.WriteLine($"\u001b[36m{CustomStrings.kellphy}\u001b[0m");
+        }
+        public static string UnixUntil(TimeSpan duration)
+        {
+            long unixSeconds = ((DateTimeOffset)DateTime.Now + duration).ToUnixTimeSeconds();
+            return $"<t:{unixSeconds}:R>";
+        }
+        public static string UnixUntil(DateTime date)
+        {
+            long unixSeconds = ((DateTimeOffset)date).ToUnixTimeSeconds();
+            return $"<t:{unixSeconds}:R>";
+        }
+        public static async void DeleteDiscordMessage(DiscordMessage messageToDelete, TimeSpan timeToWait)
+        {
+            await Task.Delay(timeToWait);
+            try
+            {
+                await messageToDelete.DeleteAsync();
+            }
+            catch { }
         }
     }
 }

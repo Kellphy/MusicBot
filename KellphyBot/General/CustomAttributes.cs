@@ -1,10 +1,12 @@
-﻿public static class EmptyString
+﻿using System;
+
+public static class EmptyString
 {
     public const string empty = "᲼";
 }
 public static class CustomStrings
 {
-    public const string version = "1.4";
+    public const string version = "1.5";
     public const string embedLinks =
         "[Server](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
