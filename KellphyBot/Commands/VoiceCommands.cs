@@ -82,6 +82,7 @@ namespace DiscordBot.Commands
                 return;
             }
             await Play(ctx.Client, ctx.Guild, ctx.Channel, ctx.Member, searchTitles);
+            await ctx.Message.DeleteAsync();
         }
         public async Task Play(DiscordClient client, DiscordGuild guild, DiscordChannel channel, DiscordMember member, string searchTitles)
         {
@@ -216,22 +217,26 @@ namespace DiscordBot.Commands
         public async Task LavaSkip(CommandContext ctx)
         {
             await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Skip, ctx.Channel.Id);
+            await ctx.Message.DeleteAsync();
         }
         [Command("pause")]
         public async Task LavaPause(CommandContext ctx)
         {
             await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Pause, ctx.Channel.Id);
+            await ctx.Message.DeleteAsync();
         }
         [Command("resume")]
         [Aliases("unpause")]
         public async Task LavaResume(CommandContext ctx)
         {
             await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Resume, ctx.Channel.Id);
+            await ctx.Message.DeleteAsync();
         }
         [Command("stop")]
         public async Task LavaLeave(CommandContext ctx)
         {
             await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Stop, ctx.Channel.Id);
+            await ctx.Message.DeleteAsync();
         }
         public async Task VoiceActions(DiscordClient client, DiscordGuild guild, ulong userId, VoiceAction action, ulong channelId = 0)
         {
@@ -295,7 +300,7 @@ namespace DiscordBot.Commands
             }
 
             /*DiscordMessage messageToDelete =*/ await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
-            //DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(10));
+            //DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
 
             switch (action)
             {
@@ -318,6 +323,7 @@ namespace DiscordBot.Commands
         public async Task LavaQueue(CommandContext ctx)
         {
             await Queue(ctx.Channel);
+            await ctx.Message.DeleteAsync();
         }
         public async Task Queue(DiscordChannel channel)
         {
@@ -464,7 +470,7 @@ namespace DiscordBot.Commands
         }
 
 
-    [Command("help")]
+        [Command("help")]
         [Cooldown(1, 2, CooldownBucketType.User)]
         public async Task Help_CC(CommandContext ctx, string commandDef = "help")
         {

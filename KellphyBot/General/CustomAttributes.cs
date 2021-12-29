@@ -6,7 +6,7 @@ public static class EmptyString
 }
 public static class CustomStrings
 {
-    public const string version = "1.5";
+    public const string version = "1.6";
     public const string embedLinks =
         "[Server](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
