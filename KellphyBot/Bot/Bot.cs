@@ -12,6 +12,7 @@ using KellphyBot.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ namespace DiscordBot
         ConfigJson configJson;
         public Bot(IServiceProvider services)
         {
+            Console.Clear();
             DataMethods.SendKellphy();
             DataMethods.SendLogs($"Version: {CustomStrings.version}");
             //Config.json
@@ -103,7 +105,7 @@ namespace DiscordBot
             ActivityType activityType = ActivityType.Playing;
             while (true)
             {
-                var activity = new DiscordActivity($"{configJson.Prefix}help | Local music bot: {CustomStrings.github} | Full bot: kellphy.com/kompanion",activityType);
+                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : {CustomStrings.github} | Full bot: kellphy.com/kompanion",activityType);
 
                 await client.UpdateStatusAsync(activity);
                 await Task.Delay(TimeSpan.FromMinutes(5));

@@ -48,7 +48,7 @@ namespace DiscordBot.Commands
 
         public HardLinks[] links = new HardLinks[]
         {
-            new HardLinks{name = "playlist", link = "https://kellphy.com/playlist" },
+            new HardLinks{name = "playlist", link = "https://www.youtube.com/playlist?list=PL08CH8hmnRyeA0Y2w1TPz2u80vmf1D1en" },
             new HardLinks{name = "test", link = "https://www.youtube.com/watch?v=qZC5gtOw3DU" },
 
             new HardLinks{name = "arcade", link = "https://www.youtube.com/watch?v=7tNtU5XFwrU",isPublic=true },
@@ -88,7 +88,7 @@ namespace DiscordBot.Commands
         {
             if (member.VoiceState == null || member.VoiceState.Channel == null)
             {
-                await channel.SendMessageAsync($"{member.Mention}, you are not in a voice channel.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, you are not in a voice channel.");
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace DiscordBot.Commands
             var lava = client.GetLavalink();
             if (!lava.ConnectedNodes.Any())
             {
-                await channel.SendMessageAsync($"{member.Mention}, the Lavalink connection is not established");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, the Lavalink connection is not established");
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace DiscordBot.Commands
 
             if (node.ConnectedGuilds.Count > 1 || (node.ConnectedGuilds.Count == 1 && node.ConnectedGuilds.First().Value.Guild.Id != guild.Id))
             {
-                await channel.SendMessageAsync($"{member.Mention}, you are trying to connect to more than 1 server.This is not currently supported. Please launch another instance of this bot.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, you are trying to connect to more than 1 server.This is not currently supported. Please launch another instance of this bot.");
                 return;
             }
 
@@ -119,13 +119,13 @@ namespace DiscordBot.Commands
 
             if (conn == null)
             {
-                await channel.SendMessageAsync($"{member.Mention}, Lavalink is not connected.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, Lavalink is not connected.");
                 return;
             }
 
             if (member.VoiceState.Channel != conn.Channel)
             {
-                await channel.SendMessageAsync($"{member.Mention}, the bot is in a different voice channel.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, the bot is in a different voice channel.");
                 return;
             }
 
@@ -149,7 +149,7 @@ namespace DiscordBot.Commands
                 }
                 if (found == false)
                 {
-                    await channel.SendMessageAsync($"{member.Mention}, track search failed for {search}");
+                    await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, track search failed for {search}");
                     int songCount = TrackCount();
                     if (conn.IsConnected && songCount < 1)
                     {
@@ -189,7 +189,7 @@ namespace DiscordBot.Commands
                     {
                         if (searchArr.Length < 2 && trackList.Count() < 2)
                         {
-                            DiscordMessage messageToDelete = await channel.SendMessageAsync(SongEmbed(track, $"Queued", member.Username));
+                            DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel,SongEmbed(track, $"Queued", member.Username),$"[Queued] {track.Title}");
                             DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
                         }
                         else
@@ -208,7 +208,7 @@ namespace DiscordBot.Commands
             if (queuedSongs > 0)
             {
                 string songOrSongs = queuedSongs == 1 ? "song" : "songs";
-                DiscordMessage messageToDelete = await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"));
+                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel,DataMethods.SimpleEmbed("Queued", $"{queuedSongs} {songOrSongs}"), $"[Queued] {queuedSongs} {songOrSongs}");
                 DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
             }
         }
@@ -257,25 +257,25 @@ namespace DiscordBot.Commands
 
             if (conn == null)
             {
-                await channel.SendMessageAsync($"{member.Mention}, Lavalink is not connected.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, Lavalink is not connected.");
                 return;
             }
 
             if (conn.CurrentState.CurrentTrack == null)
             {
-                await channel.SendMessageAsync($"{member.Mention}, there are no tracks loaded.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, there are no tracks loaded.");
                 return;
             }
 
             if (member.VoiceState == null || member.VoiceState.Channel == null)
             {
-                await channel.SendMessageAsync($"{member.Mention}, you are not in a voice channel.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, you are not in a voice channel.");
                 return;
             }
 
             if (member.VoiceState.Channel != conn.Channel)
             {
-                await channel.SendMessageAsync($"{member.Mention}, the bot is in a different voice channel.");
+                await DataMethods.SendMessageWithLog(channel,$"{member.Mention}, the bot is in a different voice channel.");
                 return;
             }
 
@@ -299,7 +299,7 @@ namespace DiscordBot.Commands
                     return;
             }
 
-            /*DiscordMessage messageToDelete =*/ await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"));
+            /*DiscordMessage messageToDelete =*/ await DataMethods.SendMessageWithLog(channel,DataMethods.SimpleEmbed($"{actionString} by {member.Username}", $"{conn.CurrentState.CurrentTrack.Title}"), $"[{actionString}] {conn.CurrentState.CurrentTrack.Title}");
             //DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
 
             switch (action)
@@ -340,7 +340,7 @@ namespace DiscordBot.Commands
             {
                 queueList = "No songs in queue.";
             }
-            DiscordMessage messageToDelete = await channel.SendMessageAsync(DataMethods.SimpleEmbed("Queue", queueList));
+            DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel,DataMethods.SimpleEmbed("Queue", queueList), $"[Queue]: {TrackCount()}");
             DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(30));
         }
 
@@ -375,7 +375,7 @@ namespace DiscordBot.Commands
                     }
                     else
                     {
-                        await channel.SendMessageAsync($"{queuedTrack.Member.Mention}, track search failed for {queuedTrack.Link}");
+                        await DataMethods.SendMessageWithLog(channel,$"{queuedTrack.Member.Mention}, track search failed for {queuedTrack.Link}");
                     }
                 }
                 else
@@ -391,7 +391,7 @@ namespace DiscordBot.Commands
             {
                 TrackDetails queuedTrack = GetTrack();
                 DiscordChannel channel = sender.Guild.GetChannel(queuedTrack.ChannelId);
-                await channel.SendMessageAsync(DataMethods.SimpleEmbed($"{reason} Disconnected."));
+                await DataMethods.SendMessageWithLog(channel,DataMethods.SimpleEmbed($"{reason} Disconnected."), $"{reason} Disconnected");
             }
             RemoveTracks();
             sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;
@@ -442,7 +442,7 @@ namespace DiscordBot.Commands
                         new DiscordButtonComponent(ButtonStyle.Secondary, "kb_voice_queue", "Show Queue"),
                         new DiscordButtonComponent(ButtonStyle.Success, "kb_voice_retry", "Requeue This Song"),
                 });
-            return await channel.SendMessageAsync(builder);
+            return await DataMethods.SendMessageWithLog(channel,builder,$"[Playing] {embed.Author.Name}");
         }
 
         private void RemoveTracks()
