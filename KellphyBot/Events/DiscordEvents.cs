@@ -164,7 +164,7 @@ namespace KellphyBot.Events
         {
             try
             {
-                Console.Write($"\u001b[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - ");
+                Console.Write($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - ");
                 Console.Write($"\u001b[36m{e.User.Username}#{e.User.Discriminator} ({e.User.Id}) ");
                 Console.Write($"\u001b[32m{e.Guild.Name} ({e.Guild.Id}) ");
                 Console.Write($"\u001b[35m{e.Channel.Name} ({e.Channel.Id}) ");

@@ -19,7 +19,7 @@ namespace DiscordBot
 
         public static void SendLogs(MyContext ctx)
         {
-            Console.Write($"\u001b[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - ");
+            Console.Write($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - ");
             Console.Write($"\u001b[36m{ctx.User.Username}#{ctx.User.Discriminator} ({ctx.User.Id}) ");
             Console.Write($"\u001b[31m{ctx.CommandName} ");
             Console.Write($"\u001b[32m{ctx.Guild.Name} ({ctx.Guild.Id}) ");
@@ -34,11 +34,11 @@ namespace DiscordBot
             {
                 eventDetails = " - " + eventDetails;
             }
-            Console.WriteLine($"\u001b[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - \u001b[33m{eventName}\u001b[0m" + eventDetails);
+            Console.WriteLine($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - \u001b[33m{eventName}\u001b[0m" + eventDetails);
         }
         public static void SendErrorLogs(string text)
         {
-            Console.WriteLine($"\u001b[36m{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff")} [UTC] - \u001b[91m{text}\u001b[0m");
+            Console.WriteLine($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - \u001b[91m{text}\u001b[0m");
         }
         public static void SendKellphy()
         {
@@ -73,7 +73,7 @@ namespace DiscordBot
             SendLogs(message);
             return await channel.SendMessageAsync(embed);
         }
-        public static async Task<DiscordMessage> SendMessageWithLog(DiscordChannel channel, DiscordMessageBuilder messageBuilder,string message)
+        public static async Task<DiscordMessage> SendMessageWithLog(DiscordChannel channel, DiscordMessageBuilder messageBuilder, string message)
         {
             SendLogs(message);
             return await channel.SendMessageAsync(messageBuilder);

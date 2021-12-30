@@ -12,7 +12,6 @@ using KellphyBot.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,7 +38,7 @@ namespace DiscordBot
                 json = sr.ReadToEnd();
             configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
 
-            if(configJson.Token.Length < 30)
+            if (configJson.Token.Length < 30)
             {
                 DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating.");
             }
@@ -105,7 +104,7 @@ namespace DiscordBot
             ActivityType activityType = ActivityType.Playing;
             while (true)
             {
-                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : {CustomStrings.github} | Full bot: kellphy.com/kompanion",activityType);
+                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : {CustomStrings.github} | Full bot: kellphy.com/kompanion", activityType);
 
                 await client.UpdateStatusAsync(activity);
                 await Task.Delay(TimeSpan.FromMinutes(5));
