@@ -1,7 +1,8 @@
 # A Discord Music Bot based on Lavalink  
+[**Discord Server**](https://discord.gg/ycYmMmP) | [**Website**](https://kellphy.com) | [**Patreon**](https://www.kellphy.com/patreon)  
 ## Setup  
 
-1. Download the **MusicBot.zip** archive from [here](https://github.com/Kellphy/MusicBot/releases).
+1. Download the **MusicBot.zip** archive from [**here**](https://github.com/Kellphy/MusicBot/releases).
 2. Extract the **MusicBot** folder.
 3. Get Java 13+. You can download and install it with the [**x64 Installer**](https://www.oracle.com/java/technologies/downloads/#jdk17-windows).   
 4. Go to https://discord.com/developers/applications  
@@ -20,5 +21,3 @@
       - 3.2.4. Paste the link in your browser window, and select your server. 
 5. Launch the bot from the **Start**, not the **MusicBot**.  
 6. Profit.  
-
-[Discord Server](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) | [Get Bot](https://github.com/Kellphy/MusicBot/releases)  
