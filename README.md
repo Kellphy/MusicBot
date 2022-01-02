@@ -1,7 +1,7 @@
 # A Discord Music Bot based on Lavalink  
 ## Setup  
 
-1. Make sure you downloaded the **MusicBot.zip** archive from [here](https://github.com/Kellphy/MusicBot/releases).
+1. Download the **MusicBot.zip** archive from [here](https://github.com/Kellphy/MusicBot/releases).
 2. Extract the **MusicBot** folder.
 3. Get Java 13+. You can download and install it with the [**x64 Installer**](https://www.oracle.com/java/technologies/downloads/#jdk17-windows).   
 4. Go to https://discord.com/developers/applications  
