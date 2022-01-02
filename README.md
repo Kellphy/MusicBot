@@ -1,10 +1,6 @@
-
-
 | [Discord](https://discord.gg/ycYmMmP)        | [Website](https://kellphy.com)          | [Patreon](https://www.kellphy.com/patreon) |
 
-## Test  
-
-| [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |  
+| [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |
 |---|---|---|  
 # A Discord Music Bot based on Lavalink  
 ## Setup  
