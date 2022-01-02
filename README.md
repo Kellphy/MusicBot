@@ -1,7 +1,6 @@
 ###### Header 6
 
 | [Discord](https://discord.gg/ycYmMmP)        | [Website](https://kellphy.com)          | [Patreon](https://www.kellphy.com/patreon) |
-|:-------------|:------------------|:------|
 
 ## Test  
 
