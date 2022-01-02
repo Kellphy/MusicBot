@@ -1,8 +1,6 @@
 | [Discord](https://discord.gg/ycYmMmP)        | [Website](https://kellphy.com)          | [Patreon](https://www.kellphy.com/patreon) |
 
-| [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |  
-|---|---|---|  
-# A Discord Music Bot based on Lavalink  
+### MusicBot is a local Discord Music Bot, that works with [Lavalink](https://github.com/freyacodes/Lavalink).  
 ## Setup  
 
 1. Download the **MusicBot.zip** archive from [**here**](https://github.com/Kellphy/MusicBot/releases).  
