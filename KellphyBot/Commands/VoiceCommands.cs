@@ -334,7 +334,8 @@ namespace DiscordBot.Commands
             for (int i = 0; i < maxQueue; i++)
             {
                 string prefix = i == 0 ? "Playing" : i.ToString();
-                queueList += $"[{prefix}] - [{trackList.ElementAt(i).Length}] {trackList.ElementAt(i).Title}\n";
+                string length = trackList.ElementAt(i).Length == TimeSpan.Zero ? "LIVE" : trackList.ElementAt(i).Length.ToString();
+                queueList += $"[{prefix}] - [{length}] {trackList.ElementAt(i).Title}\n";
             }
             if (TrackCount() > maxQueueInt) queueList += $"**+ {TrackCount() - maxQueueInt} more**";
             if (queueList.Length < 1)
@@ -410,12 +411,16 @@ namespace DiscordBot.Commands
         DiscordEmbed SongEmbed(LavalinkTrack track, string playing, string user)
         {
             string playingTimer = string.Empty;
-            if (playing == "Playing") playingTimer = "\nEnds " + DataMethods.UnixUntil(DateTime.Now + track.Length);
+            if (playing == "Playing" && track.Length != TimeSpan.Zero)
+            {
+                playingTimer = "\nEnds " + DataMethods.UnixUntil(DateTime.Now + track.Length);
+            }
+            string length = track.Length == TimeSpan.Zero ? "LIVE" : track.Length.ToString();
             return new DiscordEmbedBuilder
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor
                 {
-                    Name = track.Title + $" ({track.Author}) [{track.Length}]"
+                    Name = $"[{length}] "+track.Title + $" ({track.Author})"
                 },
                 Title = $"{playingTimer}",
                 Footer = new DiscordEmbedBuilder.EmbedFooter

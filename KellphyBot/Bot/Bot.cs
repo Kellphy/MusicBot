@@ -104,7 +104,7 @@ namespace DiscordBot
             ActivityType activityType = ActivityType.Playing;
             while (true)
             {
-                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : {CustomStrings.github} | Full bot: kellphy.com/kompanion", activityType);
+                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : kellphy.com/musicbot | Full bot: kellphy.com/kompanion", activityType);
 
                 await client.UpdateStatusAsync(activity);
                 await Task.Delay(TimeSpan.FromMinutes(5));
