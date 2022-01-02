@@ -9,7 +9,7 @@ public static class CustomStrings
         "[Server](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
         " | [Patreon](https://www.kellphy.com/patreon)" +
-        " | [Get Bot](https://github.com/Kellphy/MusicBot/releases)";
+        " | [Get Bot](https://kellphy.github.io/MusicBot)";
     public const string embedBreak = "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬";
     public const string kellphy =
 @"
