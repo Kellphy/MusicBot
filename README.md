@@ -1,7 +1,7 @@
 
 ## 2A Discord Music Bot based on Lavalink  
-| [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |
-|-|-|-|
+| [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |  
+|-|-|-|  
 ## 1A Discord Music Bot based on Lavalink  
 ## Setup  
 
