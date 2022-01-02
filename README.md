@@ -1,4 +1,4 @@
-# A Discord Music Bot based on Lavalink  
+## A Discord Music Bot based on Lavalink  
 | [Discord Server](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon) |
 ## Setup  
 
