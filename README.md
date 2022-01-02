@@ -1,7 +1,4 @@
----
-layout: default
----
-## A Discord Music Bot based on Lavalink 2  
+
 [Discord](https://discord.gg/ycYmMmP) | [Website](https://kellphy.com) | [Patreon](https://www.kellphy.com/patreon)  
 |:-------------|:------------------|:------|  
 ## Setup  
