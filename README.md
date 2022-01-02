@@ -2,10 +2,6 @@
 
 | [Discord](https://discord.gg/ycYmMmP)        | [Website](https://kellphy.com)          | [Patreon](https://www.kellphy.com/patreon) |
 |:-------------|:------------------|:------|
-| ok           | good swedish fish | nice  |
-| out of stock | good and plenty   | nice  |
-| ok           | good `oreos`      | hmm   |
-| ok           | good `zoute` drop | yumm  |
 
 ## Test  
 
