@@ -378,6 +378,7 @@ namespace DiscordBot.Commands
                     else
                     {
                         await DataMethods.SendMessageWithLog(channel, $"{queuedTrack.Member.Mention}, track search failed for {queuedTrack.Link}");
+                        await ContinueOrEnd(sender);
                     }
                 }
                 else

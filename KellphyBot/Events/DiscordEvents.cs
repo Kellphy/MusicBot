@@ -39,99 +39,56 @@ namespace KellphyBot.Events
         {
             client.ClientErrored += (DiscordClient client, ClientErrorEventArgs e) =>
             {
-                _ = Task.Run(() => ClientErroredMethod(client, e));
+                DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
                 return Task.CompletedTask;
             };
             client.SocketOpened += (DiscordClient client, SocketEventArgs e) =>
             {
-                _ = Task.Run(() => SocketOpenedMethod(client, e));
+                DataMethods.SendLogs($"WebSocket Open");
                 return Task.CompletedTask;
             };
             client.Resumed += (DiscordClient client, ReadyEventArgs e) =>
             {
-                _ = Task.Run(() => ResumedMethod(client, e));
+                DataMethods.SendLogs($"Resumed");
                 return Task.CompletedTask;
             };
             client.SocketClosed += (DiscordClient client, SocketCloseEventArgs e) =>
             {
-                _ = Task.Run(() => SocketClosedMethod(client, e));
+                DataMethods.SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
                 return Task.CompletedTask;
             };
             client.GuildUnavailable += (DiscordClient client, GuildDeleteEventArgs e) =>
             {
-                _ = Task.Run(() => GuildUnavailableMethod(client, e));
+                DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} ({e.Guild.Id})");
                 return Task.CompletedTask;
             };
             client.GuildDownloadCompleted += (DiscordClient client, GuildDownloadCompletedEventArgs e) =>
             {
-                _ = Task.Run(() => GuildDownloadCompletedMethod(client, e));
+                DataMethods.SendLogs($"{e.GetType().Name}");
+                _ = Task.Run(() => VersionInitialization(client, e));
                 return Task.CompletedTask;
             };
             client.ComponentInteractionCreated += (DiscordClient client, ComponentInteractionCreateEventArgs e) =>
             {
+                Console.Write($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - ");
+                Console.Write($"\u001b[36m{e.User.Username}#{e.User.Discriminator} ({e.User.Id}) ");
+                Console.Write($"\u001b[32m{e.Guild.Name} ({e.Guild.Id}) ");
+                Console.Write($"\u001b[35m{e.Channel.Name} ({e.Channel.Id}) ");
+                Console.Write($"\u001b[0m\n");
                 _ = Task.Run(() => InteractionCreatedMethod(client, e));
                 return Task.CompletedTask;
             };
             await Task.CompletedTask;
         }
 
-        async void ClientErroredMethod(DiscordClient client, ClientErrorEventArgs e)
-        {
-            try
-            {
-                DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
-                await Task.CompletedTask;
-            }
-            catch { }
-        }
-        async void SocketOpenedMethod(DiscordClient client, SocketEventArgs e)
-        {
-            try
-            {
-                DataMethods.SendLogs($"WebSocket Open");
-                await Task.CompletedTask;
-            }
-            catch { }
-        }
-        async void ResumedMethod(DiscordClient client, ReadyEventArgs e)
-        {
-            try
-            {
-                DataMethods.SendLogs($"Resumed");
-                await Task.CompletedTask;
-            }
-            catch { }
-        }
-        async void SocketClosedMethod(DiscordClient client, SocketCloseEventArgs e)
-        {
-            try
-            {
-                DataMethods.SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
-                await Task.CompletedTask;
-            }
-            catch { }
-        }
-
-        async void GuildUnavailableMethod(DiscordClient client, GuildDeleteEventArgs e)
-        {
-            try
-            {
-                DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} ({e.Guild.Id})");
-                await Task.CompletedTask;
-            }
-            catch { }
-        }
-
         Regex[] regexS = new Regex[]
         {
             new Regex("<a href=\"/Kellphy/MusicBot/releases/tag/(?<version>.*?)\">")
         };
-        async void GuildDownloadCompletedMethod(DiscordClient client, GuildDownloadCompletedEventArgs e)
+        async void VersionInitialization(DiscordClient client, GuildDownloadCompletedEventArgs e)
         {
             try
             {
-                DataMethods.SendLogs($"{e.GetType().Name}");
-
                 using (Stream stream = WebRequest.Create($"https://github.com/Kellphy/MusicBot/tags").GetResponse().GetResponseStream())
                 {
                     using (StreamReader reader = new StreamReader(stream))
@@ -157,19 +114,16 @@ namespace KellphyBot.Events
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                DataMethods.SendErrorLogs($"Version Initialization Incomplete: {ex}");
+            }
             await Task.CompletedTask;
         }
         async void InteractionCreatedMethod(DiscordClient client, ComponentInteractionCreateEventArgs e)
         {
             try
             {
-                Console.Write($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - ");
-                Console.Write($"\u001b[36m{e.User.Username}#{e.User.Discriminator} ({e.User.Id}) ");
-                Console.Write($"\u001b[32m{e.Guild.Name} ({e.Guild.Id}) ");
-                Console.Write($"\u001b[35m{e.Channel.Name} ({e.Channel.Id}) ");
-                Console.Write($"\u001b[0m\n");
-
                 List<string> to_compare = new List<string> { "voice" };
 
                 for (int i = 0; i < to_compare.Count; i++)
@@ -220,7 +174,10 @@ namespace KellphyBot.Events
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                DataMethods.SendErrorLogs($"Interaction Error: {ex}");
+            }
         }
     }
 }
