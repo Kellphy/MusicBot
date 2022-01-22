@@ -6,8 +6,6 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.EventArgs;
 using KellphyBot.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -18,6 +16,13 @@ using System.Threading.Tasks;
 
 namespace DiscordBot
 {
+    public struct ConfigJson
+    {
+        [JsonProperty("token")]
+        public string Token { get; private set; }
+        [JsonProperty("prefix")]
+        public string Prefix { get; private set; }
+    }
     public class Bot
     {
         public DiscordClient Client { get; private set; }
@@ -31,8 +36,17 @@ namespace DiscordBot
             Console.Clear();
             DataMethods.SendKellphy();
             DataMethods.SendLogs($"Version: {CustomStrings.version}");
+
+            _services = services;
             //Config.json
             var json = string.Empty;
+
+            if (!File.Exists("config.json"))
+            {
+                DataMethods.SendErrorLogs("config.json is missing from your directory.");
+                return;
+            }
+
             using (var fs = File.OpenRead("config.json"))
             using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
                 json = sr.ReadToEnd();
@@ -73,20 +87,18 @@ namespace DiscordBot
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<VoiceCommands>();
 
-            var slashConfig = new SlashCommandsConfiguration
-            {
-                Services = services
-            };
-            var slash = Client.UseSlashCommands(slashConfig);
+            //var slashConfig = new SlashCommandsConfiguration
+            //{
+            //    Services = services
+            //};
+            //var slash = Client.UseSlashCommands(slashConfig);
 
             //slash.RegisterCommands<SlashCommands>();
 
-            _services = services.GetService<IServiceProvider>();
-
             Commands.CommandErrored += OnCommandError;
             Commands.CommandExecuted += OncommandExecute;
-            slash.SlashCommandErrored += OnSlashCommandError;
-            slash.SlashCommandExecuted += OnSlashCommandExecute;
+            //slash.SlashCommandErrored += OnSlashCommandError;
+            //slash.SlashCommandExecuted += OnSlashCommandExecute;
             //Connect bot
             Client.ConnectAsync();
 
@@ -101,14 +113,14 @@ namespace DiscordBot
         }
         private async Task Status(DiscordClient client)
         {
-            ActivityType activityType = ActivityType.Playing;
-            while (true)
-            {
-                var activity = new DiscordActivity($"{configJson.Prefix}help | Music bot ({CustomStrings.version}) : kellphy.com/musicbot | Full bot: kellphy.com/kompanion", activityType);
+            var activity = new DiscordActivity(
+                $"{configJson.Prefix}play{CustomStrings.space}/{CustomStrings.space}play " +
+                $"Music{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/musicbot " +
+                $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion " +
+                $"This{CustomStrings.space}bot{CustomStrings.space}is{CustomStrings.space}on{CustomStrings.space}version{CustomStrings.space}{CustomStrings.version}",
+                ActivityType.Playing);
 
-                await client.UpdateStatusAsync(activity);
-                await Task.Delay(TimeSpan.FromMinutes(5));
-            }
+            await client.UpdateStatusAsync(activity);
         }
 
         async void ConnectLavaLink()
@@ -126,34 +138,34 @@ namespace DiscordBot
                 SocketEndpoint = endpoint
             };
 
-            //await Task.Delay(1000 * 5);
             var lavalink = Client.UseLavalink();
             await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after Discord.ConnectAsync(). 
 
             DataMethods.SendLogs("Lavalink Connected!");
         }
 
-        private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
-        {
-            DataMethods.SendLogs(new MyContext(e.Context));
-            await Task.CompletedTask;
-        }
-        private async Task OnSlashCommandError(SlashCommandsExtension sender, SlashCommandErrorEventArgs e)
-        {
-            VoiceCommands voice = new VoiceCommands(_services);
-            if (e.Exception is ArgumentException)
-            {
-                await voice.Help(new MyContext(e.Context), e.Context.CommandName);
-            }
-            else if (e.Exception is ChecksFailedException)
-            {
-                DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions or you keep spamming the command.");
-            }
-            else
-            {
-                DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
-            }
-        }
+        //private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
+        //{
+        //    DataMethods.SendLogs(new MyContext(e.Context));
+        //    await Task.CompletedTask;
+        //}
+        //private async Task OnSlashCommandError(SlashCommandsExtension sender, SlashCommandErrorEventArgs e)
+        //{
+        //    VoiceCommands voice = new VoiceCommands();
+        //    if (e.Exception is ArgumentException)
+        //    {
+        //        await voice.Help(new MyContext(e.Context), e.Context.CommandName);
+        //    }
+        //    else if (e.Exception is ChecksFailedException)
+        //    {
+        //        DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions or you keep spamming the command.");
+        //    }
+        //    else
+        //    {
+        //        DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
+        //    }
+        //}
+
         private async Task OncommandExecute(CommandsNextExtension sender, CommandExecutionEventArgs e)
         {
             DataMethods.SendLogs(new MyContext(e.Context));
@@ -163,8 +175,8 @@ namespace DiscordBot
         {
             if (e.Exception is ArgumentException)
             {
-                VoiceCommands voice = new VoiceCommands(_services);
-                await voice.Help(new MyContext(e.Context), e.Command.Name);
+                VoiceCommands voice = new VoiceCommands();
+                await voice.Help_MC(new MyContext(e.Context), e.Command.Name);
             }
             else if (e.Exception is ChecksFailedException)
             {
@@ -185,7 +197,7 @@ namespace DiscordBot
         }
         private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)
         {
-            new DiscordEvents(_services).EventsFeedback(sender);
+            new DiscordEvents().EventsFeedback(sender);
             await Task.CompletedTask;
         }
     }

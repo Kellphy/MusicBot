@@ -24,10 +24,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="config.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="config.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01042" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0-nightly-01042" />
     <PackageReference Include="DSharpPlus.Lavalink" Version="4.2.0-nightly-01042" />
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01042" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="links.txt">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

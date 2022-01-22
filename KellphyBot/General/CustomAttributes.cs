@@ -1,12 +1,10 @@
-﻿public static class EmptyString
+﻿public static class CustomStrings
 {
     public const string empty = "᲼";
-}
-public static class CustomStrings
-{
-    public const string version = "1.9";
+    public const string space = " ";
+    public const string version = "2.0";
     public const string embedLinks =
-        "[Server](https://kellphy.com/discord)" +
+        "[Discord](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
         " | [Patreon](https://www.kellphy.com/patreon)" +
         " | [Get Bot](https://kellphy.github.io/MusicBot)";

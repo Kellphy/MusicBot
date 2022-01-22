@@ -21,4 +21,8 @@
       - 3.2.3. Scroll down and click on **Copy**, that's your bot invite link. 
       - 3.2.4. Paste the link in your browser window, and select your server. 
 5. Launch the bot from the **Start**, not the **MusicBot**.  
-6. Profit.  
+6. (Optional) Add link shortcuts.  
+   - 6.1. Rename the file "**_links**" to "**links**".  
+   - 6.2. Add your links in the format: "myshortcut https://mylink.com/".  
+   - 6.3. The shortcut must **NOT** contain spaces.  
+   - 6.4. Save the file and restart the bot.  

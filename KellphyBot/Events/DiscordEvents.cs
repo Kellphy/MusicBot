@@ -10,17 +10,12 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static DiscordBot.Commands.VoiceCommands;
 
 namespace KellphyBot.Events
 {
     public class DiscordEvents
     {
-        private readonly IServiceProvider _services;
-        public DiscordEvents(IServiceProvider services)
-        {
-            _services = services;
-        }
-
         public async Task SendEmbedWithLinks(DiscordEmbedBuilder embedLog, DiscordChannel ch)
         {
             embedLog.AddField(CustomStrings.embedBreak, CustomStrings.embedLinks);
@@ -37,6 +32,11 @@ namespace KellphyBot.Events
         }
         public async void EventsFeedback(DiscordClient client)
         {
+            client.MessageCreated += (DiscordClient client, MessageCreateEventArgs e) =>
+            {
+                _ = Task.Run(() => MessageCreatedMethod(client, e));
+                return Task.CompletedTask;
+            };
             client.ClientErrored += (DiscordClient client, ClientErrorEventArgs e) =>
             {
                 DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
@@ -113,12 +113,53 @@ namespace KellphyBot.Events
                         }
                     }
                 }
+                DataMethods.SendLogs($"Version Check Completed!");
             }
             catch (Exception ex)
             {
                 DataMethods.SendErrorLogs($"Version Initialization Incomplete: {ex}");
             }
             await Task.CompletedTask;
+        }
+        async void MessageCreatedMethod(DiscordClient client, MessageCreateEventArgs e)
+        {
+            switch (e.Message.Content.ToLowerInvariant())
+            {
+                case string s when s.StartsWith("play"):
+                    string searchTitles = e.Message.Content.Replace("play", "").Trim();
+                    if (searchTitles == null || searchTitles.Length < 1)
+                    {
+                        await new VoiceCommands().Help(client, e.Channel, "play", "play");
+                        return;
+                    }
+                    DiscordMember member = await e.Guild.GetMemberAsync(e.Author.Id);
+                    await new VoiceCommands().Play(client, e.Guild, e.Channel, member, searchTitles, e.Message);
+                    break;
+                case string s when s.StartsWith("skip"):
+
+                    string skipsString = e.Message.Content.Replace("skip", "").Trim();
+                    if (skipsString == null || skipsString.Length < 1)
+                    {
+                        await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Skip, e.Channel.Id, e.Message);
+                    }
+                    if (Int32.TryParse(skipsString, out int skips))
+                    {
+                        await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Skip, e.Channel.Id, e.Message,skips);
+                    }
+                    break;
+                case string s when s.StartsWith("pause"):
+                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Pause, e.Channel.Id, e.Message);
+                    break;
+                case string s when s.StartsWith("resume"):
+                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Resume, e.Channel.Id, e.Message);
+                    break;
+                case string s when s.StartsWith("stop"):
+                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Stop, e.Channel.Id, e.Message);
+                    break;
+                case string s when s.StartsWith("queue"):
+                    await new VoiceCommands().Queue(e.Channel, e.Message);
+                    break;
+            }
         }
         async void InteractionCreatedMethod(DiscordClient client, ComponentInteractionCreateEventArgs e)
         {
@@ -143,31 +184,40 @@ namespace KellphyBot.Events
                         {
                             case 0://voice
                                 await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
-                                VoiceCommands.VoiceAction action = VoiceCommands.VoiceAction.None;
+                                VoiceAction action = VoiceAction.None;
+                                int toSkip = 1;
                                 switch (id)
                                 {
                                     case "skip":
-                                        action = VoiceCommands.VoiceAction.Skip;
+                                        action = VoiceAction.Skip;
+                                        break;
+                                    case "skip5":
+                                        action = VoiceAction.Skip;
+                                        toSkip = 5;
+                                        break;
+                                    case "skip10":
+                                        action = VoiceAction.Skip;
+                                        toSkip = 10;
                                         break;
                                     case "pause":
-                                        action = VoiceCommands.VoiceAction.Pause;
+                                        action = VoiceAction.Pause;
                                         break;
                                     case "resume":
-                                        action = VoiceCommands.VoiceAction.Resume;
+                                        action = VoiceAction.Resume;
                                         break;
                                     case "stop":
-                                        action = VoiceCommands.VoiceAction.Stop;
+                                        action = VoiceAction.Stop;
                                         break;
                                     case "retry":
                                         string searchUrl = e.Message.Embeds.FirstOrDefault().Description;
                                         DiscordMember member = await e.Guild.GetMemberAsync(e.User.Id);
-                                        await new VoiceCommands(_services).Play(client, e.Guild, e.Channel, member, searchUrl);
+                                        await new VoiceCommands().Play(client, e.Guild, e.Channel, member, searchUrl);
                                         return;
                                     case "queue":
-                                        await new VoiceCommands(_services).Queue(e.Channel);
+                                        await new VoiceCommands().Queue(e.Channel);
                                         return;
                                 }
-                                await new VoiceCommands(_services).VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id);
+                                await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id,skips:toSkip);
                                 break;
                         }
                         break;
