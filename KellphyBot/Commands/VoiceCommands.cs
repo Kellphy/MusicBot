@@ -13,10 +13,11 @@ namespace DiscordBot.Commands
 {
     public class VoiceCommands : BaseCommandModule
     {
-        DiscordMessage message;
-        ulong lastKnownChannelId;
-        string linksPath = "links.txt";
-
+        public record HardLinks
+        {
+            public string name;
+            public string link;
+        }
         public enum VoiceAction
         {
             None,
@@ -26,7 +27,6 @@ namespace DiscordBot.Commands
             Stop,
             Disconnect
         }
-
         public struct TrackDetails
         {
             public ulong ChannelId;
@@ -35,21 +35,20 @@ namespace DiscordBot.Commands
             public string Title;
             public TimeSpan Length;
         }
-        static LinkedList<TrackDetails> trackList = new LinkedList<TrackDetails>();
-
         public struct Lavalink
         {
             public LavalinkNodeConnection node;
             public LavalinkGuildConnection conn;
         }
-        Lavalink lavalink = new();
 
-        public record HardLinks
-        {
-            public string name;
-            public string link;
-        }
-        private readonly List<HardLinks> hardLinks = new();
+        static DiscordMessage message;
+        static ulong lastKnownChannelId;
+        static string linksPath = "links.txt";
+
+        static LinkedList<TrackDetails> trackList = new LinkedList<TrackDetails>();
+        static Lavalink lavalink = new();
+
+        readonly List<HardLinks> hardLinks = new();
 
         public VoiceCommands()
         {

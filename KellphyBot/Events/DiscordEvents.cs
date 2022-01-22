@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static DiscordBot.Commands.VoiceCommands;
@@ -89,7 +90,7 @@ namespace KellphyBot.Events
         {
             try
             {
-                using (Stream stream = WebRequest.Create($"https://github.com/Kellphy/MusicBot/tags").GetResponse().GetResponseStream())
+                using (Stream stream = await new HttpClient().GetStreamAsync("https://github.com/Kellphy/MusicBot/tags"))
                 {
                     using (StreamReader reader = new StreamReader(stream))
                     {
