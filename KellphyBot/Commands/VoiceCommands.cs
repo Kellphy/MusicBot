@@ -90,7 +90,7 @@ namespace DiscordBot.Commands
 
         public async Task<bool> InitializationAndChecks(DiscordClient client, DiscordGuild guild, DiscordChannel channel, DiscordMember member)
         {
-            if (member.VoiceState == null || member.VoiceState.Channel == null)
+            if ((member.VoiceState == null || member.VoiceState.Channel == null))
             {
                 await DataMethods.SendMessageWithLog(channel, $"{member.Mention}, you are not in a voice channel.");
                 return false;
@@ -110,9 +110,9 @@ namespace DiscordBot.Commands
                 RemoveTracks();
             }
 
-            if (lavalink.node.ConnectedGuilds.Count > 1 || (lavalink.node.ConnectedGuilds.Count == 1 && lavalink.node.ConnectedGuilds.First().Value.Guild.Id != guild.Id))
+            if ((lavalink.node.ConnectedGuilds.Count > 1 || (lavalink.node.ConnectedGuilds.Count == 1 && lavalink.node.ConnectedGuilds.First().Value.Guild.Id != guild.Id)))
             {
-                await DataMethods.SendMessageWithLog(channel, $"{member.Mention}, you are trying to connect to more than 1 server.This is not currently supported. Please launch another instance of this bot.");
+                await DataMethods.SendMessageWithLog(channel, $"{member.Mention}, you are trying to connect to more than 1 server. This is not currently supported. Please launch another instance of this bot.");
                 return false;
             }
 
@@ -125,7 +125,7 @@ namespace DiscordBot.Commands
                 return false;
             }
 
-            if (member.VoiceState.Channel != lavalink.conn.Channel)
+            if ((member.VoiceState.Channel != lavalink.conn.Channel))
             {
                 await DataMethods.SendMessageWithLog(channel, $"{member.Mention}, the bot is in a different voice channel.");
                 return false;
@@ -256,9 +256,9 @@ namespace DiscordBot.Commands
         [Command("stop")]
         public async Task Stop_CC(CommandContext ctx)
         {
-            await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Stop, ctx.Channel.Id, ctx.Message);
+            await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Stop, ctx.Channel.Id, ctx.Message, owner: true);
         }
-        public async Task VoiceActions(DiscordClient client, DiscordGuild guild, ulong userId, VoiceAction action, ulong channelId, DiscordMessage messageToDelete = null, int skips = 1)
+        public async Task VoiceActions(DiscordClient client, DiscordGuild guild, ulong userId, VoiceAction action, ulong channelId, DiscordMessage messageToDelete = null, int skips = 1, bool owner = false)
         {
             DiscordChannel channel;
             if (channelId == 0)
@@ -315,6 +315,7 @@ namespace DiscordBot.Commands
                 case VoiceAction.Stop:
                     await EditLastMessage();
                     await VoiceDisconnect(lavalink.conn);
+                    await BotDisconnect(lavalink.conn, guild);
                     break;
             }
             if (messageToDelete != null)
@@ -388,7 +389,8 @@ namespace DiscordBot.Commands
                 //case "resume":
                 default:
                     helpEmbed.AddField("Details",
-                        "⮚ You can add multiple songs with the same `play` command by using a line break with the key combination \"__Shift+Enter__\".");
+                        "⮚ You can add multiple songs with the same `play` command by using a line break with the key combination \"__Shift+Enter__\"." +
+                        "\nCurrently supporting: Youtube, Bandcam, SoundCloud, Twitch, Vimeo, and direct HTTP audio streams.");
                     string localLinks = hardLinks.Any() ? string.Join(", ", hardLinks.Select(t => t.name)) : "Check out [this](https://kellphy.com/musicbot) guide to add link shortcuts.";
                     helpEmbed.AddField("Your Shortcuts",
                         $"⮚ {localLinks}");
@@ -443,7 +445,7 @@ namespace DiscordBot.Commands
                 if (TrackCount() > 1)
                 {
                     RemoveTracks(1);
-                    var queuedTrack = GetTrack();
+                    var queuedTrack = trackList.First();
                     DiscordChannel channel = sender.Guild.GetChannel(queuedTrack.ChannelId);
                     LavalinkLoadResult loadResult = await sender.Node.Rest.GetTracksAsync(queuedTrack.Link, LavalinkSearchType.Plain);
                     if (loadResult.LoadResultType != LavalinkLoadResultType.LoadFailed && loadResult.LoadResultType != LavalinkLoadResultType.NoMatches)
@@ -468,13 +470,24 @@ namespace DiscordBot.Commands
             if (reason.Length > 1 && lastKnownChannelId != 0)
             {
                 DiscordChannel channel = sender.Guild.GetChannel(lastKnownChannelId);
-                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel, DataMethods.SimpleEmbed($"{reason} Disconnected."), $"{reason} Disconnected.");
+                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel, DataMethods.SimpleEmbed($"{reason} Detached."), $"{reason} Detached.");
                 DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
             }
             RemoveTracks();
             sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;
             sender.PlaybackStarted -= PlaybackStarted;
             sender.PlaybackFinished -= PlaybackFinished;
+            //Bot Disconnect
+        }
+
+        public async Task BotDisconnect(LavalinkGuildConnection sender, DiscordGuild guild)
+        {
+            if (lastKnownChannelId != 0)
+            {
+                DiscordChannel channel = guild.GetChannel(lastKnownChannelId);
+                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel, DataMethods.SimpleEmbed($"Disconnected by bot owner."), $"Disconnected by bot owner.");
+                DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
+            }
             if (sender.IsConnected)
                 await sender.DisconnectAsync();
         }
@@ -578,18 +591,14 @@ namespace DiscordBot.Commands
         {
             return trackList.Count;
         }
-        private TrackDetails GetTrack()
-        {
-            var track = trackList.First();
-            lastKnownChannelId = track.ChannelId;
-            return track;
-        }
+
         private void AddTracks(ulong channelId, DiscordMember member, List<string> tracks, List<string> titles, List<TimeSpan> lengths)
         {
             for (int i = 0; i < tracks.Count; i++)
             {
                 trackList.AddLast(new TrackDetails() { ChannelId = channelId, Member = member, Link = tracks[i], Title = titles[i], Length = lengths[i] });
             }
+            lastKnownChannelId = channelId;
         }
     }
 }

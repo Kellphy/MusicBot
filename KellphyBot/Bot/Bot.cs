@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,6 +28,8 @@ namespace DiscordBot
     {
         public DiscordClient Client { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
+
+        bool ignorePrefix;
 
         private readonly IServiceProvider _services;
 
@@ -56,9 +59,10 @@ namespace DiscordBot
             {
                 DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating.");
             }
-            if (configJson.Prefix.Length > 5)
+            if (configJson.Prefix.Length > 3)
             {
-                DataMethods.SendErrorLogs($"Are you sure you want a prefix that long? It's currently set to: \"{configJson.Prefix}\".");
+                DataMethods.SendErrorLogs($"Your prefix \"{configJson.Prefix}\" is so long that I decided to ignore it.");
+                ignorePrefix = true;
             }
 
             var config = new DiscordConfiguration
@@ -113,11 +117,11 @@ namespace DiscordBot
         }
         private async Task Status(DiscordClient client)
         {
+            string prefix = ignorePrefix ? "" : configJson.Prefix;
             var activity = new DiscordActivity(
-                $"{configJson.Prefix}play{CustomStrings.space}/{CustomStrings.space}play " +
+                $"{prefix}play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version} " +
                 $"Music{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/musicbot " +
-                $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion " +
-                $"This{CustomStrings.space}bot{CustomStrings.space}is{CustomStrings.space}on{CustomStrings.space}version{CustomStrings.space}{CustomStrings.version}",
+                $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion ",
                 ActivityType.Playing);
 
             await client.UpdateStatusAsync(activity);
@@ -125,9 +129,20 @@ namespace DiscordBot
 
         async void ConnectLavaLink()
         {
+            string endpointHost;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                endpointHost = "127.0.0.1";
+            }
+            else
+            {
+                endpointHost = "lvl";
+            }
+
             var endpoint = new ConnectionEndpoint
             {
-                Hostname = "127.0.0.1", // From your server configuration.
+                Hostname = endpointHost, // From your server configuration.
+                //Hostname = "127.0.0.1", // From your server configuration.
                 Port = 2333 // From your server configuration
             };
 
@@ -197,7 +212,7 @@ namespace DiscordBot
         }
         private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)
         {
-            new DiscordEvents().EventsFeedback(sender);
+            new DiscordEvents().EventsFeedback(sender, ignorePrefix);
             await Task.CompletedTask;
         }
     }

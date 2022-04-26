@@ -31,13 +31,16 @@ namespace KellphyBot.Events
             };
             return endEmbed;
         }
-        public async void EventsFeedback(DiscordClient client)
+        public async void EventsFeedback(DiscordClient client, bool ignorePrefix)
         {
-            client.MessageCreated += (DiscordClient client, MessageCreateEventArgs e) =>
+            if (ignorePrefix)
             {
-                _ = Task.Run(() => MessageCreatedMethod(client, e));
-                return Task.CompletedTask;
-            };
+                client.MessageCreated += (DiscordClient client, MessageCreateEventArgs e) =>
+                {
+                    _ = Task.Run(() => MessageCreatedMethod(client, e));
+                    return Task.CompletedTask;
+                };
+            }
             client.ClientErrored += (DiscordClient client, ClientErrorEventArgs e) =>
             {
                 DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
@@ -106,7 +109,7 @@ namespace KellphyBot.Events
                                     foreach (var owner in client.CurrentApplication.Owners)
                                     {
                                         var member = await e.Guilds.First().Value.GetMemberAsync(owner.Id);
-                                        await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only thing that you want to keep between updates is your **config** file."));
+                                        await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only files that you want to keep between updates are your **config** and **links** files."));
                                         DataMethods.SendErrorLogs($"Upgrade available from {CustomStrings.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
                                     }
                                 }
@@ -145,7 +148,7 @@ namespace KellphyBot.Events
                     }
                     if (Int32.TryParse(skipsString, out int skips))
                     {
-                        await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Skip, e.Channel.Id, e.Message,skips);
+                        await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Skip, e.Channel.Id, e.Message, skips);
                     }
                     break;
                 case string s when s.StartsWith("pause"):
@@ -155,7 +158,7 @@ namespace KellphyBot.Events
                     await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Resume, e.Channel.Id, e.Message);
                     break;
                 case string s when s.StartsWith("stop"):
-                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Stop, e.Channel.Id, e.Message);
+                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Stop, e.Channel.Id, e.Message, owner: true);
                     break;
                 case string s when s.StartsWith("queue"):
                     await new VoiceCommands().Queue(e.Channel, e.Message);
@@ -187,6 +190,7 @@ namespace KellphyBot.Events
                                 await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
                                 VoiceAction action = VoiceAction.None;
                                 int toSkip = 1;
+                                bool owner = false;
                                 switch (id)
                                 {
                                     case "skip":
@@ -208,6 +212,7 @@ namespace KellphyBot.Events
                                         break;
                                     case "stop":
                                         action = VoiceAction.Stop;
+                                        owner = true;
                                         break;
                                     case "retry":
                                         string searchUrl = e.Message.Embeds.FirstOrDefault().Description;
@@ -218,7 +223,7 @@ namespace KellphyBot.Events
                                         await new VoiceCommands().Queue(e.Channel);
                                         return;
                                 }
-                                await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id,skips:toSkip);
+                                await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id, skips: toSkip, owner: owner);
                                 break;
                         }
                         break;
