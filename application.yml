@@ -1,6 +1,6 @@
 server: # REST and WS server
   port: 2333
-  address: lvl
+  address: lvl-music
 spring:
   main:
     banner-mode: log
