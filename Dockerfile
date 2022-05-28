@@ -17,4 +17,5 @@ COPY --from=build-env /app/out .
 
 COPY application.yml ./
 COPY MusicBot/config.json ./
+COPY MusicBot/links.txt ./
 ENTRYPOINT ["dotnet", "MusicBot.dll"]
