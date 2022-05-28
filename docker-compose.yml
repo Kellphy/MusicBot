@@ -1,13 +1,13 @@
 version: "3.1"
 services:
-  lvl:
+  lvl_music:
     image: fredboat/lavalink:master
     restart: always
     volumes:
       - type: bind
         source: ./application.yml
         target: /opt/Lavalink/application.yml
-  bot:
+  bot-music:
     build: .
     image: mydiscordbot
     depends_on:
