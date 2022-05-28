@@ -1,6 +1,6 @@
 version: "3.1"
 services:
-  lvl-music:
+  lvl:
     image: fredboat/lavalink:master
     restart: always
     volumes:
@@ -11,4 +11,4 @@ services:
     build: .
     image: bot-music
     depends_on:
-      - lvl-music
+      - lvl
