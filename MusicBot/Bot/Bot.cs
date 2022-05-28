@@ -6,7 +6,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
-using KellphyBot.Events;
+using MusicBot.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
@@ -105,59 +105,8 @@ namespace DiscordBot
             //slash.SlashCommandExecuted += OnSlashCommandExecute;
             //Connect bot
             Client.ConnectAsync();
-
-            Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
         }
 
-        private Task Client_GuildDownloadCompleted(DiscordClient client, GuildDownloadCompletedEventArgs e)
-        {
-            _ = Task.Run(() => Status(client));
-            ConnectLavaLink();
-            return Task.CompletedTask;
-        }
-        private async Task Status(DiscordClient client)
-        {
-            string prefix = ignorePrefix ? "" : configJson.Prefix;
-            var activity = new DiscordActivity(
-                $"{prefix}play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version} " +
-                $"Music{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/musicbot " +
-                $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion ",
-                ActivityType.Playing);
-
-            await client.UpdateStatusAsync(activity);
-        }
-
-        async void ConnectLavaLink()
-        {
-            string endpointHost;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                endpointHost = "127.0.0.1";
-            }
-            else
-            {
-                endpointHost = "lvl";
-            }
-
-            var endpoint = new ConnectionEndpoint
-            {
-                Hostname = endpointHost, // From your server configuration.
-                //Hostname = "127.0.0.1", // From your server configuration.
-                Port = 2333 // From your server configuration
-            };
-
-            var lavalinkConfig = new LavalinkConfiguration
-            {
-                Password = "youshallnotpass", // From your server configuration.
-                RestEndpoint = endpoint,
-                SocketEndpoint = endpoint
-            };
-
-            var lavalink = Client.UseLavalink();
-            await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after Discord.ConnectAsync(). 
-
-            DataMethods.SendLogs("Lavalink Connected!");
-        }
 
         //private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
         //{
@@ -212,7 +161,7 @@ namespace DiscordBot
         }
         private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)
         {
-            new DiscordEvents().EventsFeedback(sender, ignorePrefix);
+            new DiscordEvents().EventsFeedback(sender, ignorePrefix, ignorePrefix ? "" : configJson.Prefix);
             await Task.CompletedTask;
         }
     }

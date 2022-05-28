@@ -1,6 +1,6 @@
 ## https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
-## git update-index --assume-unchanged KellphyBot/config.json
-## git update-index --no-assume-unchanged KellphyBot/config.json
+## git update-index --assume-unchanged MusicBot/config.json
+## git update-index --no-assume-unchanged MusicBot/config.json
 ## Keep nuget.config
 
 #Config file

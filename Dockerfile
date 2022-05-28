@@ -2,8 +2,8 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
 WORKDIR /app
 
 # Copy csproj and restore as distinct layers
-COPY KellphyBot/*.csproj ./
-COPY KellphyBot/NuGet.Config ./
+COPY MusicBot/*.csproj ./
+COPY MusicBot/NuGet.Config ./
 RUN dotnet restore
 
 # Copy everything else and build
@@ -16,5 +16,5 @@ WORKDIR /app
 COPY --from=build-env /app/out .
 
 COPY application.yml ./
-COPY KellphyBot/config.json ./
+COPY MusicBot/config.json ./
 ENTRYPOINT ["dotnet", "MusicBot.dll"]

@@ -3,17 +3,22 @@ using DiscordBot.Commands;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static DiscordBot.Commands.VoiceCommands;
 
-namespace KellphyBot.Events
+namespace MusicBot.Events
 {
     public class DiscordEvents
     {
@@ -31,7 +36,7 @@ namespace KellphyBot.Events
             };
             return endEmbed;
         }
-        public async void EventsFeedback(DiscordClient client, bool ignorePrefix)
+        public async void EventsFeedback(DiscordClient client, bool ignorePrefix, string prefix)
         {
             if (ignorePrefix)
             {
@@ -69,7 +74,7 @@ namespace KellphyBot.Events
             client.GuildDownloadCompleted += (DiscordClient client, GuildDownloadCompletedEventArgs e) =>
             {
                 DataMethods.SendLogs($"{e.GetType().Name}");
-                _ = Task.Run(() => VersionInitialization(client, e));
+                _ = Task.Run(() => GuildDownloadCompleted(client, e, prefix));
                 return Task.CompletedTask;
             };
             client.ComponentInteractionCreated += (DiscordClient client, ComponentInteractionCreateEventArgs e) =>
@@ -85,11 +90,69 @@ namespace KellphyBot.Events
             await Task.CompletedTask;
         }
 
+
         Regex[] regexS = new Regex[]
         {
             new Regex("<a href=\"/Kellphy/MusicBot/releases/tag/(?<version>.*?)\">")
         };
-        async void VersionInitialization(DiscordClient client, GuildDownloadCompletedEventArgs e)
+
+        private async void GuildDownloadCompleted(DiscordClient client, GuildDownloadCompletedEventArgs e, string prefix)
+        {
+            await Status(client, prefix, "Connecting ...");
+            ConnectLavaLink(client, prefix);
+            await VersionInitialization(client, e);
+
+        }
+        private async Task Status(DiscordClient client, string prefix, string newStatus = "")
+        {
+            DiscordActivity discordActivity;
+            if (newStatus.Length > 0)
+            {
+                discordActivity = new DiscordActivity(newStatus, ActivityType.Playing);
+            }
+            else
+            {
+                discordActivity = new DiscordActivity(
+                    $"{prefix}play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version} " +
+                    $"Music{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/musicbot " +
+                    $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion ",
+                    ActivityType.Playing);
+            }
+            await client.UpdateStatusAsync(discordActivity);
+        }
+        async void ConnectLavaLink(DiscordClient client, string prefix)
+        {
+            string endpointHost;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                endpointHost = "127.0.0.1";
+            }
+            else
+            {
+                endpointHost = "lvl";
+            }
+
+            var endpoint = new ConnectionEndpoint
+            {
+                Hostname = endpointHost, // From your server configuration.
+                //Hostname = "127.0.0.1", // From your server configuration.
+                Port = 2333 // From your server configuration
+            };
+
+            var lavalinkConfig = new LavalinkConfiguration
+            {
+                Password = "youshallnotpass", // From your server configuration.
+                RestEndpoint = endpoint,
+                SocketEndpoint = endpoint
+            };
+
+            var lavalink = client.UseLavalink();
+            await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after Discord.ConnectAsync(). 
+
+            DataMethods.SendLogs("Lavalink Connected!");
+            await Status(client, prefix);
+        }
+        async Task VersionInitialization(DiscordClient client, GuildDownloadCompletedEventArgs e)
         {
             try
             {

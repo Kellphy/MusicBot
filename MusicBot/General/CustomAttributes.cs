@@ -2,7 +2,7 @@
 {
     public const string empty = "᲼";
     public const string space = " ";
-    public const string version = "2.4";
+    public const string version = "2.5";
     public const string embedLinks =
         "[Discord](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
