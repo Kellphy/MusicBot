@@ -90,6 +90,7 @@ namespace DiscordBot
             };
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<VoiceCommands>();
+            Commands.RegisterCommands<AdminCommands>();
 
             //var slashConfig = new SlashCommandsConfiguration
             //{
