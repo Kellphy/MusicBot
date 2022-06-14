@@ -1,7 +1,7 @@
-﻿using MusicBot;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MusicBot;
 
 namespace DiscordBot
 {

@@ -2,16 +2,11 @@
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
-using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Lavalink;
-using DSharpPlus.Net;
 using MusicBot.Events;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
