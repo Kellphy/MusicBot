@@ -1,0 +1,25 @@
+name: VPS Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USERNAME }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ./MusicBot
+            git pull
+            docker compose build
+            docker compose down
+            docker compose up --force-recreate -d
+            docker system prune -f
