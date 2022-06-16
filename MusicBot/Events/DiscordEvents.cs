@@ -84,6 +84,20 @@ namespace MusicBot.Events
                 _ = Task.Run(() => InteractionCreatedMethod(client, e));
                 return Task.CompletedTask;
             };
+            client.VoiceStateUpdated += (DiscordClient client, VoiceStateUpdateEventArgs e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    var clientMember = await e.Guild.GetMemberAsync(client.CurrentUser.Id);
+                    if (clientMember?.VoiceState?.Channel != null
+                    && clientMember.VoiceState.Channel.Users.Count < 2)
+                    {
+                        DataMethods.SendLogs($"No more users in the voice channel.");
+                        await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, VoiceAction.Stop, e.Before.Channel.Id, skipChecks: true);
+                    }
+                });
+                return Task.CompletedTask;
+            };
             await Task.CompletedTask;
         }
 
@@ -97,7 +111,7 @@ namespace MusicBot.Events
         {
             await Status(client, prefix, "Connecting ...");
             ConnectLavaLink(client, prefix);
-            await VersionInitialization(client, e);
+            //await VersionInitialization(client, e);
 
         }
         private async Task Status(DiscordClient client, string prefix, string newStatus = "")
@@ -218,7 +232,7 @@ namespace MusicBot.Events
                     await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Resume, e.Channel.Id, e.Message);
                     break;
                 case string s when s.StartsWith("stop"):
-                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Stop, e.Channel.Id, e.Message, owner: true);
+                    await new VoiceCommands().VoiceActions(client, e.Guild, e.Author.Id, VoiceAction.Stop, e.Channel.Id, e.Message);
                     break;
                 case string s when s.StartsWith("queue"):
                     await new VoiceCommands().Queue(e.Channel, e.Message);
@@ -250,7 +264,6 @@ namespace MusicBot.Events
                                 await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
                                 VoiceAction action = VoiceAction.None;
                                 int toSkip = 1;
-                                bool owner = false;
                                 switch (id)
                                 {
                                     case "skip":
@@ -272,7 +285,6 @@ namespace MusicBot.Events
                                         break;
                                     case "stop":
                                         action = VoiceAction.Stop;
-                                        owner = true;
                                         break;
                                     case "retry":
                                         string searchUrl = e.Message.Embeds.FirstOrDefault().Description;
@@ -283,7 +295,7 @@ namespace MusicBot.Events
                                         await new VoiceCommands().Queue(e.Channel);
                                         return;
                                 }
-                                await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id, skips: toSkip, owner: owner);
+                                await new VoiceCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id, skips: toSkip);
                                 break;
                         }
                         break;

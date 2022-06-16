@@ -256,9 +256,9 @@ namespace DiscordBot.Commands
         [Command("stop")]
         public async Task Stop_CC(CommandContext ctx)
         {
-            await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Stop, ctx.Channel.Id, ctx.Message, owner: true);
+            await VoiceActions(ctx.Client, ctx.Guild, ctx.User.Id, VoiceAction.Stop, ctx.Channel.Id, ctx.Message);
         }
-        public async Task VoiceActions(DiscordClient client, DiscordGuild guild, ulong userId, VoiceAction action, ulong channelId, DiscordMessage messageToDelete = null, int skips = 1, bool owner = false)
+        public async Task VoiceActions(DiscordClient client, DiscordGuild guild, ulong userId, VoiceAction action, ulong channelId, DiscordMessage messageToDelete = null, int skips = 1, bool skipChecks = false)
         {
             DiscordChannel channel;
             if (channelId == 0)
@@ -271,7 +271,7 @@ namespace DiscordBot.Commands
             }
 
             DiscordMember member = await guild.GetMemberAsync(userId);
-            if (!await InitializationAndChecks(client, guild, channel, member))
+            if (!skipChecks && !await InitializationAndChecks(client, guild, channel, member))
             {
                 return;
             }
@@ -485,7 +485,7 @@ namespace DiscordBot.Commands
             if (lastKnownChannelId != 0)
             {
                 DiscordChannel channel = guild.GetChannel(lastKnownChannelId);
-                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel, DataMethods.SimpleEmbed($"Disconnected by bot owner."), $"Disconnected by bot owner.");
+                DiscordMessage messageToDelete = await DataMethods.SendMessageWithLog(channel, DataMethods.SimpleEmbed($"Disconnected."), $"Disconnected.");
                 DataMethods.DeleteDiscordMessage(messageToDelete, TimeSpan.FromSeconds(5));
             }
             if (sender.IsConnected)
