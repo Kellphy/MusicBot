@@ -167,14 +167,7 @@ namespace DiscordBot.Commands
                 if (found == false)
                 {
                     await DataMethods.SendMessageWithLog(channel, $"{member.Mention}, track search failed for {search}");
-                    int songCount = TrackCount();
-                    if (lavalink.conn.IsConnected && songCount < 1)
-                    {
-                        lavalink.conn.DiscordWebSocketClosed -= DiscordWebSocketClosed;
-                        lavalink.conn.PlaybackStarted -= PlaybackStarted;
-                        lavalink.conn.PlaybackFinished -= PlaybackFinished;
-                        await lavalink.conn.DisconnectAsync();
-                    }
+
                     return;
                 }
 
@@ -185,19 +178,11 @@ namespace DiscordBot.Commands
                     var selectedTrack = await ChooseTrack(client, channel, member, trackList);
                     if(selectedTrack != null)
                     {
-                        trackList = new List<LavalinkTrack>() { selectedTrack };
+                        trackList = new() { selectedTrack };
                     }
                     else
                     {
-                        int songCount = TrackCount();
-                        if (lavalink.conn.IsConnected && songCount < 1)
-                        {
-                            lavalink.conn.DiscordWebSocketClosed -= DiscordWebSocketClosed;
-                            lavalink.conn.PlaybackStarted -= PlaybackStarted;
-                            lavalink.conn.PlaybackFinished -= PlaybackFinished;
-                            await lavalink.conn.DisconnectAsync();
-                        }
-                        return;
+                        trackList = new();
                     }
                 }
 
@@ -248,6 +233,13 @@ namespace DiscordBot.Commands
             if (messageToDelete != null)
             {
                 await messageToDelete.DeleteAsync();
+            }
+            if (lavalink.conn.IsConnected && TrackCount() < 1)
+            {
+                lavalink.conn.DiscordWebSocketClosed -= DiscordWebSocketClosed;
+                lavalink.conn.PlaybackStarted -= PlaybackStarted;
+                lavalink.conn.PlaybackFinished -= PlaybackFinished;
+                await lavalink.conn.DisconnectAsync();
             }
         }
 
