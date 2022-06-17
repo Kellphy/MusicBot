@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
 using System;
 using System.Collections.Generic;
@@ -177,12 +178,29 @@ namespace DiscordBot.Commands
                     return;
                 }
 
-                IEnumerable<LavalinkTrack> trackList = new List<LavalinkTrack>() { loadResult.Tracks.First() };
+                List<LavalinkTrack> trackList = loadResult.Tracks.ToList();
 
-                if (search.Substring(0, 4) == "http")
+                if (search[..4] != "http")
                 {
-                    trackList = loadResult.Tracks;
+                    var selectedTrack = await ChooseTrack(client, channel, member, trackList);
+                    if(selectedTrack != null)
+                    {
+                        trackList = new List<LavalinkTrack>() { selectedTrack };
+                    }
+                    else
+                    {
+                        int songCount = TrackCount();
+                        if (lavalink.conn.IsConnected && songCount < 1)
+                        {
+                            lavalink.conn.DiscordWebSocketClosed -= DiscordWebSocketClosed;
+                            lavalink.conn.PlaybackStarted -= PlaybackStarted;
+                            lavalink.conn.PlaybackFinished -= PlaybackFinished;
+                            await lavalink.conn.DisconnectAsync();
+                        }
+                        return;
+                    }
                 }
+
                 List<string> tracksToQueue = new List<string>();
                 List<string> trackTitles = new List<string>();
                 List<TimeSpan> trackLengths = new List<TimeSpan>();
@@ -230,6 +248,48 @@ namespace DiscordBot.Commands
             if (messageToDelete != null)
             {
                 await messageToDelete.DeleteAsync();
+            }
+        }
+
+        private async Task<LavalinkTrack> ChooseTrack(DiscordClient client, DiscordChannel channel,DiscordMember member, List<LavalinkTrack> trackList)
+        {
+            #region Emoji 1-10
+            DiscordEmoji[] emojiOptions = {
+                DiscordEmoji.FromName(client, ":regional_indicator_a:"),
+                DiscordEmoji.FromName(client, ":regional_indicator_b:"),
+                DiscordEmoji.FromName(client, ":regional_indicator_c:"),
+                DiscordEmoji.FromName(client, ":regional_indicator_d:"),
+                DiscordEmoji.FromName(client, ":regional_indicator_e:"),
+                };
+            #endregion
+            var description = string.Empty;
+            for (int z = 0; z < Math.Min(trackList.Count, emojiOptions.Length); z++)
+            {
+                string length = trackList[z].Length == TimeSpan.Zero ? "LIVE" : trackList[z].Length.ToString();
+
+                description = string.Concat(description,
+                     $"```[{emojiOptions[z]}] [{length}] {trackList[z].Title} ({trackList[z].Author})\n```");
+            }
+            var embed = DataMethods.SimpleEmbed("Choose a track", description);
+            var message = await channel.SendMessageAsync(embed);
+
+            for (int z = 0; z < Math.Min(trackList.Count, emojiOptions.Length); z++)
+            {
+                await message.CreateReactionAsync(emojiOptions[z]);
+            }
+            await message.CreateReactionAsync(DiscordEmoji.FromName(client, ":x:"));
+
+            var interaction = await client.GetInteractivity().WaitForReactionAsync(message, member, TimeSpan.FromMinutes(2));
+            if (!interaction.TimedOut && emojiOptions.Contains(interaction.Result.Emoji))
+            {
+                int index = Array.IndexOf(emojiOptions, interaction.Result.Emoji);
+                await message.DeleteAsync();
+                return trackList[index];
+            }
+            else
+            {
+                await message.DeleteAsync();
+                return null;
             }
         }
 

@@ -36,6 +36,7 @@
   <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01143" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.0-nightly-01143" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0-nightly-01143" />
     <PackageReference Include="DSharpPlus.Lavalink" Version="4.3.0-nightly-01143" />
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0-nightly-01143" />
   </ItemGroup>

@@ -3,6 +3,8 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using MusicBot.Events;
 using Newtonsoft.Json;
 using System;
@@ -72,6 +74,12 @@ namespace DiscordBot
             Client = new DiscordClient(config);
 
             Client.Ready += ClientReady;
+
+            Client.UseInteractivity(new InteractivityConfiguration
+            {
+                //How much to wait for a command
+                Timeout = TimeSpan.FromMinutes(5)
+            });
 
             //Setup commands
             var commandsConfig = new CommandsNextConfiguration
