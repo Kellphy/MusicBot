@@ -1,6 +1,7 @@
 version: "3.1"
 services:
   lvl:
+    container_name: lvl
     image: fredboat/lavalink:dev
     restart: always
     volumes:
@@ -9,6 +10,8 @@ services:
         target: /opt/Lavalink/application.yml
   bot-music:
     build: .
+    container_name: bot-music
     image: bot-music
+    restart: always
     depends_on:
       - lvl
