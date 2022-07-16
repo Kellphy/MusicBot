@@ -1,7 +1,7 @@
+# [https://kellphy.github.io/MusicBot](https://kellphy.github.io/MusicBot)  
 | [Discord](https://discord.gg/ycYmMmP)        | [Website](https://kellphy.com)          | [Patreon](https://www.kellphy.com/patreon) |
 
 ### MusicBot is a local Discord Music Bot, that works with [Lavalink](https://github.com/freyacodes/Lavalink).  
-## [https://kellphy.github.io/MusicBot](https://kellphy.github.io/MusicBot)  
 ## Setup  
 
 1. Download the **MusicBot.zip** archive from [**here**](https://github.com/Kellphy/MusicBot/releases).  
