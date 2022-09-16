@@ -6,6 +6,7 @@ namespace DiscordBot
 {
     public sealed class DataMethods
     {
+        public static DiscordMessage staticDiscordMessage;
         public static DiscordEmbedBuilder SimpleEmbed(string title = null, string description = null)
         {
             var sEmbed = new DiscordEmbedBuilder
@@ -62,21 +63,6 @@ namespace DiscordBot
                 await messageToDelete.DeleteAsync();
             }
             catch { }
-        }
-        public static async Task<DiscordMessage> SendMessageWithLog(DiscordChannel channel, string message)
-        {
-            SendLogs(message);
-            return await channel.SendMessageAsync(message);
-        }
-        public static async Task<DiscordMessage> SendMessageWithLog(DiscordChannel channel, DiscordEmbed embed, string message)
-        {
-            SendLogs(message);
-            return await channel.SendMessageAsync(embed);
-        }
-        public static async Task<DiscordMessage> SendMessageWithLog(DiscordChannel channel, DiscordMessageBuilder messageBuilder, string message)
-        {
-            SendLogs(message);
-            return await channel.SendMessageAsync(messageBuilder);
         }
     }
 }

@@ -5,6 +5,8 @@ using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+using Microsoft.VisualBasic;
 using MusicBot.Events;
 using Newtonsoft.Json;
 using System;
@@ -26,8 +28,6 @@ namespace DiscordBot
         public DiscordClient Client { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
 
-        bool ignorePrefix;
-
         private readonly IServiceProvider _services;
 
         ConfigJson configJson;
@@ -43,7 +43,7 @@ namespace DiscordBot
 
             if (!File.Exists("config.json"))
             {
-                DataMethods.SendErrorLogs("config.json is missing from your directory.");
+                DataMethods.SendErrorLogs("config.json is missing from your directory");
                 return;
             }
 
@@ -54,12 +54,7 @@ namespace DiscordBot
 
             if (configJson.Token.Length < 30)
             {
-                DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating.");
-            }
-            if (configJson.Prefix.Length > 3)
-            {
-                DataMethods.SendErrorLogs($"Your prefix \"{configJson.Prefix}\" is so long that I decided to ignore it.");
-                ignorePrefix = true;
+                DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating");
             }
 
             var config = new DiscordConfiguration
@@ -91,20 +86,15 @@ namespace DiscordBot
                 EnableDefaultHelp = false,
                 Services = services,
             };
+            var slashConfig = new SlashCommandsConfiguration
+            {
+                Services = _services
+            };
             Commands = Client.UseCommandsNext(commandsConfig);
-            Commands.RegisterCommands<VoiceCommands>();
             Commands.RegisterCommands<AdminCommands>();
+            var slashCommands = Client.UseSlashCommands(slashConfig);
+            slashCommands.RegisterCommands<VoiceSlashCommands>();
 
-            //var slashConfig = new SlashCommandsConfiguration
-            //{
-            //    Services = services
-            //};
-            //var slash = Client.UseSlashCommands(slashConfig);
-
-            //slash.RegisterCommands<SlashCommands>();
-
-            Commands.CommandErrored += OnCommandError;
-            Commands.CommandExecuted += OncommandExecute;
             //slash.SlashCommandErrored += OnSlashCommandError;
             //slash.SlashCommandExecuted += OnSlashCommandExecute;
             //Connect bot
@@ -133,39 +123,9 @@ namespace DiscordBot
         //        DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
         //    }
         //}
-
-        private async Task OncommandExecute(CommandsNextExtension sender, CommandExecutionEventArgs e)
-        {
-            DataMethods.SendLogs(new MyContext(e.Context));
-            await Task.CompletedTask;
-        }
-        private async Task OnCommandError(CommandsNextExtension sender, CommandErrorEventArgs e)
-        {
-            if (e.Exception is ArgumentException)
-            {
-                VoiceCommands voice = new VoiceCommands();
-                await voice.Help_MC(new MyContext(e.Context), e.Command.Name);
-            }
-            else if (e.Exception is ChecksFailedException)
-            {
-                var firstCheck = e.Command.ExecutionChecks[0];
-                if (firstCheck is DSharpPlus.CommandsNext.Attributes.CooldownAttribute)
-                {
-                    DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, the command is on cooldown.");
-                }
-                else if (firstCheck is DSharpPlus.CommandsNext.Attributes.RequireUserPermissionsAttribute)
-                {
-                    DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions to use this command.");
-                }
-            }
-            else
-            {
-                DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | {e.Context.Message.Content} | Error: {e.Exception}");
-            }
-        }
         private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)
         {
-            new DiscordEvents().EventsFeedback(sender, ignorePrefix, ignorePrefix ? "" : configJson.Prefix);
+            new DiscordEvents().EventsFeedback(sender);
             await Task.CompletedTask;
         }
     }
