@@ -116,9 +116,7 @@ namespace MusicBot.Events
             else
             {
                 discordActivity = new DiscordActivity(
-                    $"/play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version} " +
-                    $"Music{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/musicbot " +
-                    $"Full{CustomStrings.space}bot:{CustomStrings.space}kellphy.com/kompanion ",
+                    $"/play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version}",
                     ActivityType.Playing);
             }
             await client.UpdateStatusAsync(discordActivity);
