@@ -85,7 +85,7 @@ namespace MusicBot.Events
                     && clientMember.VoiceState.Channel.Users.Count < 2)
                     {
                         DataMethods.SendLogs($"No more users in the voice channel");
-                        await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, VoiceAction.Stop, e.Before.Channel.Id, skipChecks: true);
+                        await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, VoiceAction.Stop, skipChecks: true);
                     }
                 });
                 return Task.CompletedTask;
@@ -116,7 +116,9 @@ namespace MusicBot.Events
             else
             {
                 discordActivity = new DiscordActivity(
-                    $"/play{CustomStrings.space}|{CustomStrings.space}Version{CustomStrings.space}{CustomStrings.version}",
+                    $"/play" +
+                    $"{CustomStrings.space}{CustomStrings.space}|{CustomStrings.space}{CustomStrings.space}" +
+                    $"Version{CustomStrings.space}{CustomStrings.space}{CustomStrings.version}",
                     ActivityType.Playing);
             }
             await client.UpdateStatusAsync(discordActivity);
@@ -253,9 +255,9 @@ namespace MusicBot.Events
                                         return;
                                 }
                                 await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
-                                    await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, action, e.Channel.Id, skips: toSkip));
+                                    await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, action, skips: toSkip));
 
-                                await Task.Delay(TimeSpan.FromSeconds(5));
+                                await Task.Delay(TimeSpan.FromSeconds(CustomStrings.messageDeleteSeconds));
                                 await e.Interaction.DeleteOriginalResponseAsync();
                                 break;
                         }

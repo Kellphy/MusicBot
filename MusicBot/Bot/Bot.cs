@@ -1,12 +1,10 @@
 ﻿using DiscordBot.Commands;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
-using Microsoft.VisualBasic;
 using MusicBot.Events;
 using Newtonsoft.Json;
 using System;

@@ -1,8 +1,9 @@
 ﻿public static class CustomStrings
 {
+    public const int messageDeleteSeconds = 10;
     public const string empty = "᲼";
     public const string space = " ";
-    public const string version = "3.0";
+    public const string version = "3.1";
     public const string embedLinks =
         "[Discord](https://kellphy.com/discord)" +
         " | [Website](https://kellphy.com)" +
