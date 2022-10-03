@@ -22,8 +22,22 @@ namespace DiscordBot.Commands
             DataMethods.SendLogs(content);
             return builder.WithContent(content);
         }
+        public static DiscordWebhookBuilder WithLoggedContent(
+            this DiscordWebhookBuilder builder,
+            string content)
+        {
+            DataMethods.SendLogs(content);
+            return builder.WithContent(content);
+        }
         public static DiscordInteractionResponseBuilder WithLog(
             this DiscordInteractionResponseBuilder builder,
+            string content)
+        {
+            DataMethods.SendLogs(content);
+            return builder;
+        }
+        public static DiscordWebhookBuilder WithLog(
+            this DiscordWebhookBuilder builder,
             string content)
         {
             DataMethods.SendLogs(content);
@@ -93,9 +107,10 @@ namespace DiscordBot.Commands
         public async Task Play_SC(InteractionContext ctx,
             [Option("Song", "Supports Youtube Search, Youtube, Bandcam, SoundCloud, Twitch, Vimeo, and direct HTTP audio streams")] string searchItem)
         {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             var result = await Play(ctx.Client, ctx.Guild, ctx.Member, ctx.Channel, searchItem);
 
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, result);
+            await ctx.EditResponseAsync(result);
             await Task.Delay(TimeSpan.FromSeconds(CustomStrings.messageDeleteSeconds));
             await ctx.DeleteResponseAsync();
         }
@@ -103,9 +118,10 @@ namespace DiscordBot.Commands
         public async Task PlayFirst_SC(InteractionContext ctx,
             [Option("Song", "Supports Youtube Search, Youtube, Bandcam, SoundCloud, Twitch, Vimeo, and direct HTTP audio streams")] string searchItem)
         {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             var result = await Play(ctx.Client, ctx.Guild, ctx.Member, ctx.Channel, searchItem, true);
 
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, result);
+            await ctx.EditResponseAsync(result);
             await Task.Delay(TimeSpan.FromSeconds(CustomStrings.messageDeleteSeconds));
             await ctx.DeleteResponseAsync();
         }
@@ -165,14 +181,14 @@ namespace DiscordBot.Commands
         }
 
         #region 1st Level
-        public async Task<DiscordInteractionResponseBuilder> Play(DiscordClient client, DiscordGuild guild, DiscordMember member, DiscordChannel channel, string searchTitles, bool playFirst = false)
+        public async Task<DiscordWebhookBuilder> Play(DiscordClient client, DiscordGuild guild, DiscordMember member, DiscordChannel channel, string searchTitles, bool playFirst = false)
         {
             if (DataMethods.staticDiscordMessage == null)
             {
                 DataMethods.staticDiscordMessage = await channel.SendMessageAsync(DataMethods.SimpleEmbed("LoveLetter", "Says Hello!"));
             }
 
-            DiscordInteractionResponseBuilder builder = new();
+            DiscordWebhookBuilder builder = new();
             var hardLink = hardLinks.Where(t => t.name == searchTitles).FirstOrDefault();
             if (hardLink != null)
             {
@@ -413,8 +429,10 @@ namespace DiscordBot.Commands
                     LavalinkLoadResult loadResult = await sender.Node.Rest.GetTracksAsync(queuedTrack.Link, LavalinkSearchType.Plain);
                     if (loadResult.LoadResultType != LavalinkLoadResultType.LoadFailed && loadResult.LoadResultType != LavalinkLoadResultType.NoMatches)
                     {
-                        await sender.PlayAsync(loadResult.Tracks.FirstOrDefault());
-                        await DataMethods.staticDiscordMessage.ModifyAsync(CreateEmbedWithButtoms(SongEmbed(loadResult.Tracks.FirstOrDefault(), "Playing", queuedTrack.Member.Username)));
+                        var firstTrack = loadResult.Tracks.FirstOrDefault();
+                        await sender.PlayAsync(firstTrack);
+                        await DataMethods.staticDiscordMessage.ModifyAsync(CreateEmbedWithButtoms(SongEmbed(firstTrack, "Playing", queuedTrack.Member.Username)));
+                        return builder.WithLoggedContent($"Playback Continues with: {firstTrack.Title}");
                     }
                     else
                     {
@@ -424,22 +442,24 @@ namespace DiscordBot.Commands
                 }
                 else
                 {
-                    VoiceDisconnect(builder, sender, "Playback Finished");
+                    return builder.WithLoggedContent(VoiceDisconnect(builder, sender, "Playback Finished"));
                 }
             }
-
-            return builder.WithLoggedContent("Bot is disconnected");
+            else
+            {
+                return builder.WithLoggedContent("Bot is disconnected");
+            }
         }
-        private void VoiceDisconnect(DiscordInteractionResponseBuilder builder, LavalinkGuildConnection sender, string reason)
+        private string VoiceDisconnect(DiscordInteractionResponseBuilder builder, LavalinkGuildConnection sender, string reason)
         {
             RemoveTracks();
             sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;
             sender.PlaybackStarted -= PlaybackStarted;
             sender.PlaybackFinished -= PlaybackFinished;
 
-            DataMethods.SendLogs($"{reason} Detached");
-
             DataMethods.staticDiscordMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(DataMethods.SimpleEmbed($"{reason}")));
+
+            return reason;
         }
 
         private Task PlaybackStarted(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.TrackStartEventArgs e)
