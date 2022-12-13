@@ -5,13 +5,30 @@ services:
     image: fredboat/lavalink:dev
     restart: always
     volumes:
-      - type: bind
-        source: ./application.yml
-        target: /opt/Lavalink/application.yml
+      - azure-volume:/opt/Lavalink
+    deploy:
+      resources:
+        limits:
+          cpus: '0.45'
+          memory: 0.2G
+
   bot-music:
     build: .
     container_name: c-bot-music
-    image: bot-music
+    image: kellphy.azurecr.io/bot-music
+    #image: bot-music
     restart: always
     depends_on:
       - lvl
+    deploy:
+      resources:
+        limits:
+          cpus: '0.05'
+          memory: 0.1G
+      
+volumes:
+  azure-volume:
+    driver: azure_file
+    driver_opts:
+      share_name: musicbot
+      storage_account_name: kellphystorage

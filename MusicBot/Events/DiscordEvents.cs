@@ -132,7 +132,7 @@ namespace MusicBot.Events
             }
             else
             {
-                endpointHost = "lvl";
+                endpointHost = "c-lvl";
             }
 
             var endpoint = new ConnectionEndpoint
