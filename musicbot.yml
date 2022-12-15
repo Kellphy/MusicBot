@@ -1,0 +1,18 @@
+version: "3.1"
+services:
+  lvl:
+    container_name: c-lvl
+    image: fredboat/lavalink:dev
+    restart: always
+    volumes:
+      - type: bind
+        source: ./application.yml
+        target: /opt/Lavalink/application.yml
+
+  bot-music:
+    build: .
+    container_name: c-bot-music
+    image: bot-music
+    restart: always
+    depends_on:
+      - lvl
