@@ -116,7 +116,7 @@ namespace MusicBot.Events
 			else
 			{
 				discordActivity = new DiscordActivity(
-					$"with \"/play\" | Version {CustomStrings.version}", ActivityType.Playing);
+					$"with \"/play\" | v.{CustomStrings.version}", ActivityType.Playing);
 			}
 			await client.UpdateStatusAsync(discordActivity);
 		}
