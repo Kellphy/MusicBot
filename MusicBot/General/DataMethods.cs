@@ -43,7 +43,7 @@ namespace DiscordBot
         }
         public static void SendKellphy()
         {
-            Console.WriteLine($"\u001b[36m{CustomStrings.kellphy}\u001b[0m");
+            Console.WriteLine($"\u001b[36m{CustomAttributes.kellphy}\u001b[0m");
         }
         public static string UnixUntil(TimeSpan duration)
         {

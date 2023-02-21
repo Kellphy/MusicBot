@@ -21,7 +21,7 @@ namespace MusicBot.Events
 	{
 		public async Task SendEmbedWithLinks(DiscordEmbedBuilder embedLog, DiscordChannel ch)
 		{
-			embedLog.AddField(CustomStrings.embedBreak, CustomStrings.embedLinks);
+			embedLog.AddField(CustomAttributes.embedBreak, CustomAttributes.embedLinks);
 			await ch.SendMessageAsync(embedLog);
 		}
 		public DiscordEmbedBuilder EventEmbed(string subject)
@@ -116,7 +116,7 @@ namespace MusicBot.Events
 			else
 			{
 				discordActivity = new DiscordActivity(
-					$"with \"/play\" | v.{CustomStrings.version}", ActivityType.Playing);
+					$"with \"/play\" | v.{CustomAttributes.version}", ActivityType.Playing);
 			}
 			await client.UpdateStatusAsync(discordActivity);
 		}
@@ -167,13 +167,13 @@ namespace MusicBot.Events
 							if (matches.Count > 0 && matches.First().Success)
 							{
 								var newVersion = matches.First().Groups["version"].ToString();
-								if (newVersion != CustomStrings.version)
+								if (newVersion != CustomAttributes.version)
 								{
 									foreach (var owner in client.CurrentApplication.Owners)
 									{
 										var member = await e.Guilds.First().Value.GetMemberAsync(owner.Id);
-										await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomStrings.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only files that you want to keep between updates are your **config** and **links** files"));
-										DataMethods.SendErrorLogs($"Upgrade available from {CustomStrings.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
+										await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomAttributes.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only files that you want to keep between updates are your **config** and **links** files"));
+										DataMethods.SendErrorLogs($"Upgrade available from {CustomAttributes.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
 									}
 								}
 							}
@@ -254,7 +254,7 @@ namespace MusicBot.Events
 								await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
 									await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, action, skips: toSkip));
 
-								await Task.Delay(TimeSpan.FromSeconds(CustomStrings.messageDeleteSeconds));
+								await Task.Delay(TimeSpan.FromSeconds(CustomAttributes.messageDeleteSeconds));
 								await e.Interaction.DeleteOriginalResponseAsync();
 								break;
 						}

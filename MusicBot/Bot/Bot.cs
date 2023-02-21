@@ -20,7 +20,9 @@ namespace DiscordBot
         public string Token { get; private set; }
         [JsonProperty("prefix")]
         public string Prefix { get; private set; }
-    }
+		[JsonProperty("isOwnerStarted")]
+		public bool IsOwnerStarted { get; private set; }
+	}
     public class Bot
     {
         public DiscordClient Client { get; private set; }
@@ -28,12 +30,11 @@ namespace DiscordBot
 
         private readonly IServiceProvider _services;
 
-        ConfigJson configJson;
         public Bot(IServiceProvider services)
         {
             Console.Clear();
             DataMethods.SendKellphy();
-            DataMethods.SendLogs($"Version: {CustomStrings.version}");
+            DataMethods.SendLogs($"Version: {CustomAttributes.version}");
 
             _services = services;
             //Config.json
@@ -48,16 +49,16 @@ namespace DiscordBot
             using (var fs = File.OpenRead("config.json"))
             using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
                 json = sr.ReadToEnd();
-            configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+			CustomAttributes.configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
 
-            if (configJson.Token.Length < 30)
+			if (CustomAttributes.configJson.Token.Length < 30)
             {
                 DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating");
             }
 
             var config = new DiscordConfiguration
             {
-                Token = configJson.Token,
+                Token = CustomAttributes.configJson.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Error,
@@ -77,7 +78,7 @@ namespace DiscordBot
             //Setup commands
             var commandsConfig = new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { configJson.Prefix },
+                StringPrefixes = new string[] { CustomAttributes.configJson.Prefix },
                 EnableDms = false,
                 EnableMentionPrefix = true,
                 DmHelp = false,
