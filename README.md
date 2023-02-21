@@ -4,9 +4,9 @@
 ### MusicBot is a local Discord Music Bot that works with [Lavalink](https://github.com/freyacodes/Lavalink).  
 ## Setup  
 
-1. Download the **MusicBot.zip** archive from [**here**](https://github.com/Kellphy/MusicBot/releases).  
+1. Get the **MusicBot.zip** archive from [**releases**](https://github.com/Kellphy/MusicBot/releases).  
 2. Extract the **MusicBot** folder.  
-3. Get Java 13+. You can download and install it with the [**x64 Installer**](https://www.oracle.com/java/technologies/downloads/#jdk17-windows).   
+3. Get Java 13+. You can download and install it with the [**x64 Installer**](https://www.oracle.com/java/technologies/downloads).   
 4. Go to [Discord Developer Applications](https://discord.com/developers/applications)  
    - 3.1. Get your token.  
       - 3.1.1. Create a **New Application**.  
