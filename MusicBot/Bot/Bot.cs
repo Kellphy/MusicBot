@@ -1,7 +1,6 @@
 ﻿using DiscordBot.Commands;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -10,11 +9,10 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DiscordBot
 {
-    public struct ConfigJson
+	public struct ConfigJson
     {
         [JsonProperty("token")]
         public string Token { get; private set; }
@@ -67,8 +65,6 @@ namespace DiscordBot
 
             Client = new DiscordClient(config);
 
-            Client.Ready += ClientReady;
-
             Client.UseInteractivity(new InteractivityConfiguration
             {
                 //How much to wait for a command
@@ -98,7 +94,9 @@ namespace DiscordBot
             //slash.SlashCommandExecuted += OnSlashCommandExecute;
             //Connect bot
             Client.ConnectAsync();
-        }
+
+			new DiscordEvents().EventsFeedback(Client);
+		}
 
 
         //private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
@@ -122,10 +120,5 @@ namespace DiscordBot
         //        DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
         //    }
         //}
-        private async Task ClientReady(DiscordClient sender, ReadyEventArgs e)
-        {
-            new DiscordEvents().EventsFeedback(sender);
-            await Task.CompletedTask;
-        }
     }
 }

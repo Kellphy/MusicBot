@@ -45,7 +45,7 @@ namespace MusicBot.Events
 				DataMethods.SendLogs($"WebSocket Open");
 				return Task.CompletedTask;
 			};
-			client.Resumed += (DiscordClient client, ReadyEventArgs e) =>
+			client.SessionResumed += (DiscordClient client, SessionReadyEventArgs e) =>
 			{
 				DataMethods.SendLogs($"Resumed");
 				return Task.CompletedTask;
@@ -275,7 +275,7 @@ namespace MusicBot.Events
 			DiscordMessageBuilder messageBuilder = new()
 			{
 				Content = builder.Content,
-				Embed = builder.Embeds.FirstOrDefault()
+				//Embed = builder.Embeds.FirstOrDefault()
 			};
 			messageBuilder.AddComponents(builder.Components);
 
