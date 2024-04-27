@@ -3,7 +3,7 @@ services:
   lvl:
     container_name: c-lvl
     image: fredboat/lavalink:dev
-    restart: always
+    restart: unless-stopped
     volumes:
       - type: bind
         source: ./application.yml
@@ -13,6 +13,6 @@ services:
     build: .
     container_name: c-bot-music
     image: bot-music
-    restart: always
+    restart: unless-stopped
     depends_on:
       - lvl
