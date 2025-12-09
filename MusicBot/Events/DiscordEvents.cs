@@ -45,7 +45,7 @@ namespace MusicBot.Events
 				DataMethods.SendLogs($"WebSocket Open");
 				return Task.CompletedTask;
 			};
-			client.SessionResumed += (DiscordClient client, SessionReadyEventArgs e) =>
+			client.Resumed += (DiscordClient client, ReadyEventArgs e) =>
 			{
 				DataMethods.SendLogs($"Resumed");
 				return Task.CompletedTask;
