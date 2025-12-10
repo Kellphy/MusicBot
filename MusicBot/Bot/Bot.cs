@@ -27,43 +27,21 @@ namespace DiscordBot
         public CommandsNextExtension Commands { get; private set; }
 
         private readonly IServiceProvider _services;
+        private static IServiceProvider _staticServiceProvider;
 
-        public Bot(IServiceProvider services)
+        public static IServiceProvider GetServiceProvider() => _staticServiceProvider;
+
+        public Bot(DiscordClient discordClient, IServiceProvider services)
         {
             Console.Clear();
             DataMethods.SendKellphy();
             DataMethods.SendLogs($"Version: {CustomAttributes.version}");
 
             _services = services;
-            //Config.json
-            var json = string.Empty;
-
-            if (!File.Exists("config.json"))
-            {
-                DataMethods.SendErrorLogs("config.json is missing from your directory");
-                return;
-            }
-
-            using (var fs = File.OpenRead("config.json"))
-            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                json = sr.ReadToEnd();
-			CustomAttributes.configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
-
-			if (CustomAttributes.configJson.Token.Length < 30)
-            {
-                DataMethods.SendErrorLogs("I'm pretty sure you forgot to add your token. Be sure to not override it when updating");
-            }
-
-            var config = new DiscordConfiguration
-            {
-                Token = CustomAttributes.configJson.Token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true,
-                MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Error,
-                Intents = DiscordIntents.AllUnprivileged,
-            };
-
-            Client = new DiscordClient(config);
+            _staticServiceProvider = services;
+            
+            // Use the injected DiscordClient
+            Client = discordClient;
 
             Client.UseInteractivity(new InteractivityConfiguration
             {

@@ -1,6 +1,19 @@
 server: # REST and WS server
   port: 2333
   address: 127.0.0.1
+
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    clients:
+      - MUSIC
+      - WEB
+      - ANDROID_TESTSUITE
+      - TVHTML5EMBEDDED
+
 lavalink:
   server:
     password: "youshallnotpass"

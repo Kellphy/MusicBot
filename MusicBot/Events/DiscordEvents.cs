@@ -3,8 +3,8 @@ using DiscordBot.Commands;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Lavalink;
-using DSharpPlus.Net;
+using Lavalink4NET;
+using Lavalink4NET.Rest.Entities.Tracks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -102,9 +102,9 @@ namespace MusicBot.Events
 		private async void GuildDownloadCompleted(DiscordClient client, GuildDownloadCompletedEventArgs e)
 		{
 			await Status(client, "Connecting ...");
-			ConnectLavaLink(client);
-			//await VersionInitialization(client, e);
-
+			// Lavalink4NET connection is now handled by dependency injection
+			// The IAudioService will be injected where needed
+			await Status(client);
 		}
 		private async Task Status(DiscordClient client, string newStatus = "")
 		{
@@ -119,38 +119,6 @@ namespace MusicBot.Events
 					$"with \"/play\" | v.{CustomAttributes.version}", ActivityType.Playing);
 			}
 			await client.UpdateStatusAsync(discordActivity);
-		}
-		async void ConnectLavaLink(DiscordClient client)
-		{
-			string endpointHost;
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-			{
-				endpointHost = "127.0.0.1";
-			}
-			else
-			{
-				endpointHost = "c-lvl";
-			}
-
-			var endpoint = new ConnectionEndpoint
-			{
-				Hostname = endpointHost, // From your server configuration.
-										 //Hostname = "127.0.0.1", // From your server configuration.
-				Port = 2333 // From your server configuration
-			};
-
-			var lavalinkConfig = new LavalinkConfiguration
-			{
-				Password = "youshallnotpass", // From your server configuration.
-				RestEndpoint = endpoint,
-				SocketEndpoint = endpoint
-			};
-
-			var lavalink = client.UseLavalink();
-			await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after Discord.ConnectAsync(). 
-
-			DataMethods.SendLogs("Lavalink Connected!");
-			await Status(client);
 		}
 		async Task VersionInitialization(DiscordClient client, GuildDownloadCompletedEventArgs e)
 		{

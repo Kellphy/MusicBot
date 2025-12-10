@@ -1,14 +1,20 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.Lavalink;
 using DSharpPlus.SlashCommands;
+using Lavalink4NET;
+using Lavalink4NET.Players;
+using Lavalink4NET.Players.Queued;
+using Lavalink4NET.Rest.Entities.Tracks;
+using Lavalink4NET.Tracks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Commands
@@ -68,16 +74,12 @@ namespace DiscordBot.Commands
             public string Title;
             public TimeSpan Length;
         }
-        public struct Lavalink
-        {
-            public LavalinkNodeConnection node;
-            public LavalinkGuildConnection conn;
-        }
 
         static string linksPath = "links.txt";
 
         static LinkedList<TrackDetails> trackList = new LinkedList<TrackDetails>();
-        static Lavalink lavalink = new();
+        static IAudioService _audioService;
+        static QueuedLavalinkPlayer _player;
 
         readonly List<HardLinks> hardLinks = new();
 
@@ -191,21 +193,19 @@ namespace DiscordBot.Commands
             }
 
             var initializationAndChecks = await InitializationAndChecks(client, guild, member);
-			if (!initializationAndChecks.Item1)
+            if (!initializationAndChecks.Item1)
             {
                 return builder.WithLoggedContent($"Failed Initialization and Checks: {initializationAndChecks.Item2.Content}");
             }
 
-			if (DataMethods.staticDiscordMessage == null)
-			{
-				DataMethods.staticDiscordMessage = await channel.SendMessageAsync(DataMethods.SimpleEmbed("LoveLetter", "Says Hello!"));
-			}
-
-			LavalinkSearchType[] searchTypes = new LavalinkSearchType[] { LavalinkSearchType.Youtube, LavalinkSearchType.SoundCloud };
+            if (DataMethods.staticDiscordMessage == null)
+            {
+                DataMethods.staticDiscordMessage = await channel.SendMessageAsync(DataMethods.SimpleEmbed("LoveLetter", "Says Hello!"));
+            }
 
             string[] searchArr = searchTitles.Split('\n').Take(100).ToArray();
             int queuedSongs = 0;
-            LavalinkTrack mainTrack = new();
+            LavalinkTrack mainTrack = null;
 
             foreach (string searchString in searchArr)
             {
@@ -215,54 +215,60 @@ namespace DiscordBot.Commands
                     search = await GetTitleFromSpotify(search);
                 }
 
-                LavalinkLoadResult loadResult = await lavalink.node.Rest.GetTracksAsync(search, LavalinkSearchType.Plain);
-                bool found = false;
-                foreach (LavalinkSearchType searchType in searchTypes)
+                // Use Lavalink4NET search
+                TrackLoadResult loadResult;
+                
+                // If it's a URL, try loading directly
+                if (search.StartsWith("http"))
                 {
-                    if (loadResult.LoadResultType != LavalinkLoadResultType.LoadFailed
-                        && loadResult.LoadResultType != LavalinkLoadResultType.NoMatches)
-                    {
-                        found = true;
-                        break;
-                    }
-                    loadResult = await lavalink.node.Rest.GetTracksAsync(search, searchType);
+                    loadResult = await _audioService.Tracks.LoadTracksAsync(search, TrackSearchMode.None);
                 }
-                if (found == false)
+                else
+                {
+                    // Try YouTube search first
+                    loadResult = await _audioService.Tracks.LoadTracksAsync(search, TrackSearchMode.YouTube);
+                }
+                
+                if (!loadResult.IsSuccess || !loadResult.Tracks.Any())
+                {
+                    // Try SoundCloud if YouTube fails
+                    loadResult = await _audioService.Tracks.LoadTracksAsync(search, TrackSearchMode.SoundCloud);
+                }
+
+                if (!loadResult.IsSuccess || !loadResult.Tracks.Any())
                 {
                     return builder.WithLoggedContent($"{member.Mention}, track search failed for {search}");
                 }
 
-                List<LavalinkTrack> trackList = loadResult.Tracks.Take(100).ToList();
+                List<LavalinkTrack> tracksFromSearch = loadResult.Tracks.Take(100).ToList();
 
-                if (search[..4] != "http")
+                if (!search.StartsWith("http"))
                 {
-                    //var selectedTrack = await ChooseTrack(client, member, trackList);
-                    var selectedTrack = trackList[0];
+                    // Take first track for non-URL searches
+                    var selectedTrack = tracksFromSearch[0];
                     if (selectedTrack != null)
                     {
-                        trackList = new() { selectedTrack };
+                        tracksFromSearch = new() { selectedTrack };
                     }
                     else
                     {
-                        trackList = new();
+                        tracksFromSearch = new();
                     }
                 }
 
                 List<string> tracksToQueue = new List<string>();
                 List<string> trackTitles = new List<string>();
                 List<TimeSpan> trackLengths = new List<TimeSpan>();
-                foreach (LavalinkTrack track in trackList)
+                foreach (LavalinkTrack track in tracksFromSearch)
                 {
                     int songCount = TrackCount();
                     if (songCount < 1)
                     {
-                        lavalink.conn.PlaybackFinished += PlaybackFinished;
-                        lavalink.conn.PlaybackStarted += PlaybackStarted;
-                        lavalink.conn.DiscordWebSocketClosed += DiscordWebSocketClosed;
-                        await lavalink.conn.PlayAsync(track);
+                        // Play track using Lavalink4NET player
+                        await _player.PlayAsync(track);
 
                         //For the first song
-                        AddTracks(member, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title }, new List<TimeSpan>() { track.Length }, playFirst);
+                        AddTracks(member, new List<string>() { track.Uri.ToString() }, new List<string>() { track.Title }, new List<TimeSpan>() { track.Duration }, playFirst);
 
                         mainTrack = track;
                         await DataMethods.staticDiscordMessage.ModifyAsync(CreateEmbedWithButtoms(SongEmbed(track, "Playing", member.Username)));
@@ -271,9 +277,9 @@ namespace DiscordBot.Commands
                     {
                         tracksToQueue.Add(track.Uri.ToString());
                         trackTitles.Add(track.Title);
-                        trackLengths.Add(track.Length);
+                        trackLengths.Add(track.Duration);
 
-                        if (searchArr.Length < 2 && trackList.Count() < 2)
+                        if (searchArr.Length < 2 && tracksFromSearch.Count() < 2)
                         {
                             mainTrack = track;
                             queuedSongs = -1;
@@ -289,13 +295,6 @@ namespace DiscordBot.Commands
                 AddTracks(member, tracksToQueue, trackTitles, trackLengths, playFirst);
             }
 
-            //if (lavalink.conn.IsConnected && TrackCount() < 1)
-            //{
-            //    lavalink.conn.DiscordWebSocketClosed -= DiscordWebSocketClosed;
-            //    lavalink.conn.PlaybackStarted -= PlaybackStarted;
-            //    lavalink.conn.PlaybackFinished -= PlaybackFinished;
-            //    await lavalink.conn.DisconnectAsync();
-            //}
             if (queuedSongs > 0)
             {
                 string songOrSongs = queuedSongs == 1 ? "song" : "songs";
@@ -337,13 +336,13 @@ namespace DiscordBot.Commands
 
             DiscordMember member = await guild.GetMemberAsync(userId);
 
-			var initializationAndChecks = await InitializationAndChecks(client, guild, member);
-			if (!skipChecks && !initializationAndChecks.Item1)
-			{
-				return builder.WithLoggedContent($"Failed Initialization and Checks: {initializationAndChecks.Item2.Content}");
-			}
+            var initializationAndChecks = await InitializationAndChecks(client, guild, member);
+            if (!skipChecks && !initializationAndChecks.Item1)
+            {
+                return builder.WithLoggedContent($"Failed Initialization and Checks: {initializationAndChecks.Item2.Content}");
+            }
 
-			string actionString = string.Empty;
+            string actionString = string.Empty;
             string skipString = skips > 1 ? $" {skips}" : string.Empty;
             switch (action)
             {
@@ -364,23 +363,25 @@ namespace DiscordBot.Commands
             switch (action)
             {
                 case VoiceAction.Pause:
-                    await lavalink.conn.PauseAsync();
+                    await _player.PauseAsync();
                     break;
                 case VoiceAction.Resume:
-                    await lavalink.conn.ResumeAsync();
+                    await _player.ResumeAsync();
                     break;
                 case VoiceAction.Skip:
                     RemoveTracks(skips - 1);
-                    await lavalink.conn.StopAsync();
+                    await _player.SkipAsync();
                     break;
                 case VoiceAction.Stop:
-                    //await EditLastMessage();
-                    VoiceDisconnect(builder, lavalink.conn, "Stopped");
-                    if (lavalink.conn.IsConnected)
+                    VoiceDisconnect(builder, "Stopped");
+                    if (_player != null && _player.State != PlayerState.Destroyed)
                     {
-                        await lavalink.conn.DisconnectAsync();
-                        await DataMethods.staticDiscordMessage.DeleteAsync();
-                        DataMethods.staticDiscordMessage = null;
+                        await _player.DisconnectAsync();
+                        if (DataMethods.staticDiscordMessage != null)
+                        {
+                            await DataMethods.staticDiscordMessage.DeleteAsync();
+                            DataMethods.staticDiscordMessage = null;
+                        }
                     }
                     break;
             }
@@ -388,6 +389,7 @@ namespace DiscordBot.Commands
             return builder.AddEmbed(DataMethods.SimpleEmbed($"{actionString}{skipString} by {member.Username}"))
                 .WithLog($"[{actionString}{skipString}] by {member.Username}");
         }
+        
         public DiscordEmbed Queue()
         {
             int maxQueueInt = 10;
@@ -409,43 +411,38 @@ namespace DiscordBot.Commands
         }
         #endregion
 
-        private async Task DiscordWebSocketClosed(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.WebSocketCloseEventArgs e)
-        {
-            sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;
-            sender.PlaybackStarted -= PlaybackStarted;
-            sender.PlaybackFinished -= PlaybackFinished;
-            await Task.CompletedTask;
-        }
-        private async Task PlaybackFinished(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.TrackFinishEventArgs e)
+        private async Task OnTrackEndedAsync(object sender, EventArgs eventArgs)
         {
             DiscordInteractionResponseBuilder builder = new();
-            await ContinueOrEnd(builder, sender);
+            await ContinueOrEnd(builder);
         }
-        async Task<DiscordInteractionResponseBuilder> ContinueOrEnd(DiscordInteractionResponseBuilder builder, LavalinkGuildConnection sender)
+
+        async Task<DiscordInteractionResponseBuilder> ContinueOrEnd(DiscordInteractionResponseBuilder builder)
         {
-            if (sender.IsConnected)
+            if (_player != null && _player.State != PlayerState.Destroyed)
             {
                 if (TrackCount() > 1)
                 {
                     RemoveTracks(1);
                     var queuedTrack = trackList.First();
-                    LavalinkLoadResult loadResult = await sender.Node.Rest.GetTracksAsync(queuedTrack.Link, LavalinkSearchType.Plain);
-                    if (loadResult.LoadResultType != LavalinkLoadResultType.LoadFailed && loadResult.LoadResultType != LavalinkLoadResultType.NoMatches)
+                    var loadResult = await _audioService.Tracks.LoadTracksAsync(queuedTrack.Link, TrackSearchMode.None);
+                    
+                    if (loadResult.IsSuccess && loadResult.Tracks.Any())
                     {
                         var firstTrack = loadResult.Tracks.FirstOrDefault();
-                        await sender.PlayAsync(firstTrack);
+                        await _player.PlayAsync(firstTrack);
                         await DataMethods.staticDiscordMessage.ModifyAsync(CreateEmbedWithButtoms(SongEmbed(firstTrack, "Playing", queuedTrack.Member.Username)));
                         return builder.WithLoggedContent($"Playback Continues with: {firstTrack.Title}");
                     }
                     else
                     {
                         builder.WithContent($"{queuedTrack.Member.Mention}, track search failed for {queuedTrack.Link}");
-                        return await ContinueOrEnd(builder, sender);
+                        return await ContinueOrEnd(builder);
                     }
                 }
                 else
                 {
-                    return builder.WithLoggedContent(VoiceDisconnect(builder, sender, "Playback Finished"));
+                    return builder.WithLoggedContent(VoiceDisconnect(builder, "Playback Finished"));
                 }
             }
             else
@@ -453,87 +450,95 @@ namespace DiscordBot.Commands
                 return builder.WithLoggedContent("Bot is disconnected");
             }
         }
-        private string VoiceDisconnect(DiscordInteractionResponseBuilder builder, LavalinkGuildConnection sender, string reason)
+
+        private string VoiceDisconnect(DiscordInteractionResponseBuilder builder, string reason)
         {
             RemoveTracks();
-            sender.DiscordWebSocketClosed -= DiscordWebSocketClosed;
-            sender.PlaybackStarted -= PlaybackStarted;
-            sender.PlaybackFinished -= PlaybackFinished;
-
-            DataMethods.staticDiscordMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(DataMethods.SimpleEmbed($"{reason}")));
+            
+            if (DataMethods.staticDiscordMessage != null)
+            {
+                DataMethods.staticDiscordMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(DataMethods.SimpleEmbed($"{reason}")));
+            }
 
             return reason;
         }
 
-        private Task PlaybackStarted(LavalinkGuildConnection sender, DSharpPlus.Lavalink.EventArgs.TrackStartEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
-
         #region Helpers
         public async Task<(bool, DiscordInteractionResponseBuilder)> InitializationAndChecks(DiscordClient client, DiscordGuild guild, DiscordMember member)
-		{
-			if ((member.VoiceState == null || member.VoiceState.Channel == null))
-			{
-				return (false, new DiscordInteractionResponseBuilder()
-					.WithLoggedContent($"{member.Mention}, you are not in a voice channel"));
-			}
-
-			var extension = client.GetLavalink();
-			if (!extension.ConnectedNodes.Any())
-			{
-				return (false, new DiscordInteractionResponseBuilder()
-					.WithLoggedContent($"{member.Mention}, the Lavalink connection is not established"));
-			}
-
-			lavalink.node = extension.ConnectedNodes.Values.First();
-			DiscordChannel channelVoice = member.VoiceState.Channel;
-			if (lavalink.node.GetGuildConnection(channelVoice.Guild) == null)
-			{
-				RemoveTracks();
-			}
-
-			if (lavalink.node.ConnectedGuilds.Count >= 1)
+        {
+            if ((member.VoiceState == null || member.VoiceState.Channel == null))
             {
-				if(lavalink.node.ConnectedGuilds.FirstOrDefault().Value?.Guild?.Id != guild.Id)
-				{
-					return (false, new DiscordInteractionResponseBuilder()
-						.WithLoggedContent($"{member.Mention}, you are trying to connect to more than 1 server. This is not currently supported. Please launch another instance of this bot"));
-				}
-			}
-            else
-			{
-				var isOwner = await IsBotOwner(client, member);
-				if (!isOwner && CustomAttributes.configJson.IsOwnerStarted)
-				{
-					return (false, new DiscordInteractionResponseBuilder()
-						.WithLoggedContent($"{member.Mention}, the config file says that only the owner can start me :)"));
-				}
-			}
+                return (false, new DiscordInteractionResponseBuilder()
+                    .WithLoggedContent($"{member.Mention}, you are not in a voice channel"));
+            }
 
-			await lavalink.node.ConnectAsync(channelVoice);
+            // Get IAudioService from service provider
+            if (_audioService == null)
+            {
+                // This should be injected properly via DI, but for now get it from a static context
+                var serviceProvider = Bot.GetServiceProvider();
+                _audioService = serviceProvider.GetRequiredService<IAudioService>();
+            }
 
-			lavalink.conn = lavalink.node.GetGuildConnection(guild);
-			if (lavalink.conn == null)
-			{
-				return (false, new DiscordInteractionResponseBuilder()
-					.WithLoggedContent($"{member.Mention}, Lavalink is not connected"));
-			}
+            DiscordChannel channelVoice = member.VoiceState.Channel;
+            
+            // Check if bot is already in another server
+            if (_player != null && _player.GuildId != guild.Id)
+            {
+                return (false, new DiscordInteractionResponseBuilder()
+                    .WithLoggedContent($"{member.Mention}, you are trying to connect to more than 1 server. This is not currently supported. Please launch another instance of this bot"));
+            }
 
-			if ((member.VoiceState.Channel != lavalink.conn.Channel))
-			{
-				return (false, new DiscordInteractionResponseBuilder()
-					.WithLoggedContent($"{member.Mention}, the bot is in a different voice channel"));
-			}
-			return (true, new DiscordInteractionResponseBuilder());
-		}
+            // Check owner permissions if needed
+            if (_player == null)
+            {
+                var isOwner = await IsBotOwner(client, member);
+                if (!isOwner && CustomAttributes.configJson.IsOwnerStarted)
+                {
+                    return (false, new DiscordInteractionResponseBuilder()
+                        .WithLoggedContent($"{member.Mention}, the config file says that only the owner can start me :)"));
+                }
+            }
 
-		private static Task<bool> IsBotOwner(DiscordClient client, DiscordMember member)
-		{
-			return (client.CurrentApplication != null) ? Task.FromResult(client.CurrentApplication.Owners.Any((DiscordUser x) => x.Id == member.Id)) : Task.FromResult(member.Id == client.CurrentUser.Id);
-		}
+            // Join voice channel if not connected
+            if (_player == null || _player.State == PlayerState.Destroyed)
+            {
+                var result = await _audioService.Players
+                    .RetrieveAsync<QueuedLavalinkPlayer, QueuedLavalinkPlayerOptions>(
+                        guild.Id,
+                        channelVoice.Id,
+                        playerFactory: PlayerFactory.Queued,
+                        options: Microsoft.Extensions.Options.Options.Create(new QueuedLavalinkPlayerOptions()),
+                        retrieveOptions: new PlayerRetrieveOptions(
+                            PlayerChannelBehavior.Join),
+                        cancellationToken: CancellationToken.None)
+                    .ConfigureAwait(false);
 
-		DiscordEmbed SongEmbed(LavalinkTrack track, string playing, string user)
+                _player = result.IsSuccess ? result.Player : null;
+
+                if (_player == null)
+                {
+                    return (false, new DiscordInteractionResponseBuilder()
+                        .WithLoggedContent($"{member.Mention}, Lavalink is not connected"));
+                }
+            }
+
+            // Check if member is in the same voice channel
+            if (member.VoiceState.Channel.Id != _player.VoiceChannelId)
+            {
+                return (false, new DiscordInteractionResponseBuilder()
+                    .WithLoggedContent($"{member.Mention}, the bot is in a different voice channel"));
+            }
+
+            return (true, new DiscordInteractionResponseBuilder());
+        }
+
+        private static Task<bool> IsBotOwner(DiscordClient client, DiscordMember member)
+        {
+            return (client.CurrentApplication != null) ? Task.FromResult(client.CurrentApplication.Owners.Any((DiscordUser x) => x.Id == member.Id)) : Task.FromResult(member.Id == client.CurrentUser.Id);
+        }
+
+        DiscordEmbed SongEmbed(LavalinkTrack track, string playing, string user)
         {
             DiscordColor color;
             string playingTimer = string.Empty;
@@ -541,9 +546,11 @@ namespace DiscordBot.Commands
             string iconUrl = string.Empty;
             string queuePrefix = string.Empty;
 
-            if (playing == "Playing" && track.Length != TimeSpan.Zero)
+            var trackDuration = track.Duration;
+
+            if (playing == "Playing" && trackDuration != TimeSpan.Zero)
             {
-                playingTimer = "Ends " + DataMethods.UnixUntil(DateTime.Now + track.Length);
+                playingTimer = "Ends " + DataMethods.UnixUntil(DateTime.Now + trackDuration);
             }
 
             switch (playing)
@@ -567,7 +574,7 @@ namespace DiscordBot.Commands
                     break;
             }
 
-            string length = track.Length == TimeSpan.Zero ? "LIVE" : track.Length.ToString();
+            string length = trackDuration == TimeSpan.Zero ? "LIVE" : trackDuration.ToString();
             string queue = TrackCount() > 1 ? $"{queuePrefix}: {TrackCount() - 1}" : string.Empty;
             string footerText = playing == "Playing" ? $"Queued by {user}\n{queue}" : queue;
 
