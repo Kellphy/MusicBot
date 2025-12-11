@@ -3,251 +3,257 @@ using DiscordBot.Commands;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Lavalink4NET;
-using Lavalink4NET.Rest.Entities.Tracks;
+using Microsoft.Extensions.DependencyInjection;
+using MusicBot.Models;
+using MusicBot.Services;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static DiscordBot.Commands.VoiceSlashCommands;
 
 namespace MusicBot.Events
 {
-	public class DiscordEvents
-	{
-		public async Task SendEmbedWithLinks(DiscordEmbedBuilder embedLog, DiscordChannel ch)
-		{
-			embedLog.AddField(CustomAttributes.embedBreak, CustomAttributes.embedLinks);
-			await ch.SendMessageAsync(embedLog);
-		}
-		public DiscordEmbedBuilder EventEmbed(string subject)
-		{
-			var endEmbed = new DiscordEmbedBuilder
-			{
-				Title = subject,
-				Color = DiscordColor.DarkBlue
-			};
-			return endEmbed;
-		}
-		public async void EventsFeedback(DiscordClient client)
-		{
-			client.ClientErrored += (DiscordClient client, ClientErrorEventArgs e) =>
-			{
-				DataMethods.SendErrorLogs($"Client Error: {e.EventName} {e.Exception}");
-				return Task.CompletedTask;
-			};
-			client.SocketOpened += (DiscordClient client, SocketEventArgs e) =>
-			{
-				DataMethods.SendLogs($"WebSocket Open");
-				return Task.CompletedTask;
-			};
-			client.Resumed += (DiscordClient client, ReadyEventArgs e) =>
-			{
-				DataMethods.SendLogs($"Resumed");
-				return Task.CompletedTask;
-			};
-			client.SocketClosed += (DiscordClient client, SocketCloseEventArgs e) =>
-			{
-				DataMethods.SendLogs($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
-				return Task.CompletedTask;
-			};
-			client.GuildUnavailable += (DiscordClient client, GuildDeleteEventArgs e) =>
-			{
-				DataMethods.SendErrorLogs($"Guild Unavailable: {e.Guild.Name} ({e.Guild.Id})");
-				return Task.CompletedTask;
-			};
-			client.GuildDownloadCompleted += (DiscordClient client, GuildDownloadCompletedEventArgs e) =>
-			{
-				DataMethods.SendLogs($"{e.GetType().Name}");
-				_ = Task.Run(() => GuildDownloadCompleted(client, e));
-				return Task.CompletedTask;
-			};
-			client.ComponentInteractionCreated += (DiscordClient client, ComponentInteractionCreateEventArgs e) =>
-			{
-				Console.Write($"\u001b[36m{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} - ");
-				Console.Write($"\u001b[36m{e.User.Username}#{e.User.Discriminator} ({e.User.Id}) ");
-				Console.Write($"\u001b[32m{e.Guild.Name} ({e.Guild.Id}) ");
-				Console.Write($"\u001b[35m{e.Channel.Name} ({e.Channel.Id}) ");
-				Console.Write($"\u001b[0m\n");
-				_ = Task.Run(() => InteractionCreatedMethod(client, e));
-				return Task.CompletedTask;
-			};
-			client.VoiceStateUpdated += (DiscordClient client, VoiceStateUpdateEventArgs e) =>
-			{
-				_ = Task.Run(async () =>
-				{
-					var clientMember = await e.Guild.GetMemberAsync(client.CurrentUser.Id);
-					if (clientMember?.VoiceState?.Channel != null
-					&& clientMember.VoiceState.Channel.Users.Count < 2)
-					{
-						DataMethods.SendLogs($"No more users in the voice channel");
-						await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, VoiceAction.Stop, skipChecks: true);
-					}
-				});
-				return Task.CompletedTask;
-			};
-			await Task.CompletedTask;
-		}
+    /// <summary>
+    /// Handles Discord client events and interactions
+    /// </summary>
+    public class DiscordEvents
+    {
 
+        /// <summary>
+        /// Registers event handlers for Discord client
+        /// </summary>
+        public void EventsFeedback(DiscordClient client)
+        {
+            client.ClientErrored += OnClientError;
+            client.SocketOpened += OnSocketOpened;
+            client.Resumed += OnResumed;
+            client.SocketClosed += OnSocketClosed;
+            client.GuildUnavailable += OnGuildUnavailable;
+            client.GuildDownloadCompleted += OnGuildDownloadCompleted;
+            client.ComponentInteractionCreated += OnComponentInteraction;
+            client.VoiceStateUpdated += OnVoiceStateUpdated;
+        }
 
-		Regex[] regexS = new Regex[]
-		{
-			new Regex("<a href=\"/Kellphy/MusicBot/releases/tag/(?<version>.*?)\">")
-		};
+        private Task OnClientError(DiscordClient c, ClientErrorEventArgs e)
+        {
+            GetService<ILoggingService>().LogError($"Client Error: {e.EventName} {e.Exception}");
+            return Task.CompletedTask;
+        }
 
-		private async void GuildDownloadCompleted(DiscordClient client, GuildDownloadCompletedEventArgs e)
-		{
-			await Status(client, "Connecting ...");
-			// Lavalink4NET connection is now handled by dependency injection
-			// The IAudioService will be injected where needed
-			await Status(client);
-		}
-		private async Task Status(DiscordClient client, string newStatus = "")
-		{
-			DiscordActivity discordActivity;
-			if (newStatus.Length > 0)
-			{
-				discordActivity = new DiscordActivity(newStatus, ActivityType.Playing);
-			}
-			else
-			{
-				discordActivity = new DiscordActivity(
-					$"with \"/play\" | v.{CustomAttributes.version}", ActivityType.Playing);
-			}
-			await client.UpdateStatusAsync(discordActivity);
-		}
-		async Task VersionInitialization(DiscordClient client, GuildDownloadCompletedEventArgs e)
-		{
-			try
-			{
-				using (Stream stream = await new HttpClient().GetStreamAsync("https://github.com/Kellphy/MusicBot/tags"))
-				{
-					using (StreamReader reader = new StreamReader(stream))
-					{
-						string html = reader.ReadToEnd();
-						foreach (Regex regex in regexS)
-						{
-							MatchCollection matches = regex.Matches(html);
-							if (matches.Count > 0 && matches.First().Success)
-							{
-								var newVersion = matches.First().Groups["version"].ToString();
-								if (newVersion != CustomAttributes.version)
-								{
-									foreach (var owner in client.CurrentApplication.Owners)
-									{
-										var member = await e.Guilds.First().Value.GetMemberAsync(owner.Id);
-										await member.SendMessageAsync(DataMethods.SimpleEmbed($"Upgrade available from {CustomAttributes.version} to {newVersion}!", "[Download the lastest MusicBot.zip and overwrite your files!](https://github.com/Kellphy/MusicBot/releases)\nThe only files that you want to keep between updates are your **config** and **links** files"));
-										DataMethods.SendErrorLogs($"Upgrade available from {CustomAttributes.version} to {newVersion}: https://github.com/Kellphy/MusicBot/releases");
-									}
-								}
-							}
-						}
-					}
-				}
-				DataMethods.SendLogs($"Version Check Completed!");
-			}
-			catch (Exception ex)
-			{
-				DataMethods.SendErrorLogs($"Version Initialization Incomplete: {ex}");
-			}
-			await Task.CompletedTask;
-		}
-		async void InteractionCreatedMethod(DiscordClient client, ComponentInteractionCreateEventArgs e)
-		{
-			try
-			{
-				List<string> to_compare = new List<string> { "voice" };
-				DiscordInteractionResponseBuilder builder = new();
+        private Task OnSocketOpened(DiscordClient c, SocketEventArgs e)
+        {
+            GetService<ILoggingService>().LogEvent("WebSocket Open");
+            return Task.CompletedTask;
+        }
 
-				for (int i = 0; i < to_compare.Count; i++)
-				{
-					int prefix = 3;
+        private Task OnResumed(DiscordClient c, ReadyEventArgs e)
+        {
+            GetService<ILoggingService>().LogEvent("Resumed");
+            return Task.CompletedTask;
+        }
 
-					string comparer = e.Id.Substring(prefix, to_compare[i].Length);//Button
-					if (e.Values.Length > 0) comparer = e.Values.FirstOrDefault().Substring(prefix, to_compare[i].Length);//Select Menu
+        private Task OnSocketClosed(DiscordClient c, SocketCloseEventArgs e)
+        {
+            GetService<ILoggingService>().LogEvent($"WebSocket Closed: {e.CloseCode} {e.CloseMessage}");
+            return Task.CompletedTask;
+        }
 
-					if (comparer == to_compare[i])
-					{
-						string id = string.Empty;
-						if (e.Values.Length > 0) id = e.Values.FirstOrDefault().Substring(prefix + to_compare[i].Length + 1);//Select Menu
-						else id = e.Id.Substring(prefix + to_compare[i].Length + 1);//Button
+        private Task OnGuildUnavailable(DiscordClient c, GuildDeleteEventArgs e)
+        {
+            GetService<ILoggingService>().LogError($"Guild Unavailable: {e.Guild.Name} ({e.Guild.Id})");
+            return Task.CompletedTask;
+        }
 
-						switch (i)
-						{
-							case 0://voice
-								VoiceAction action = VoiceAction.None;
-								int toSkip = 1;
-								switch (id)
-								{
-									case "skip":
-										action = VoiceAction.Skip;
-										break;
-									case "skip5":
-										action = VoiceAction.Skip;
-										toSkip = 5;
-										break;
-									case "skip10":
-										action = VoiceAction.Skip;
-										toSkip = 10;
-										break;
-									case "skip50":
-										action = VoiceAction.Skip;
-										toSkip = 50;
-										break;
-									case "pause":
-										action = VoiceAction.Pause;
-										break;
-									case "resume":
-										action = VoiceAction.Resume;
-										break;
-									case "stop":
-										action = VoiceAction.Stop;
-										break;
-									//case "retry":
-									//    string searchUrl = e.Message.Embeds.FirstOrDefault().Description;
-									//    DiscordMember member = await e.Guild.GetMemberAsync(e.User.Id);
+        private Task OnGuildDownloadCompleted(DiscordClient c, GuildDownloadCompletedEventArgs e)
+        {
+            GetService<ILoggingService>().LogEvent("GuildDownloadCompleted");
+            _ = Task.Run(() => GuildDownloadCompletedAsync(c, e));
+            return Task.CompletedTask;
+        }
 
-									//    await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
-									//        (await new VoiceSlashCommands().Play(client, e.Guild, member, e.Channel, searchUrl)).AsEphemeral());
-									//    return;
-									case "queue":
-										await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
-											new DiscordInteractionResponseBuilder().AddEmbed(new VoiceSlashCommands().Queue()).AsEphemeral());
-										return;
-								}
-								await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
-									await new VoiceSlashCommands().VoiceActions(client, e.Guild, e.User.Id, action, skips: toSkip));
+        private Task OnComponentInteraction(DiscordClient c, ComponentInteractionCreateEventArgs e)
+        {
+            var logging = GetService<ILoggingService>();
+            logging.LogInfo($"Button: {e.User.Username}#{e.User.Discriminator} ({e.User.Id}) | " +
+                $"Guild: {e.Guild.Name} ({e.Guild.Id}) | Channel: {e.Channel.Name} ({e.Channel.Id})");
+            _ = Task.Run(() => InteractionCreatedAsync(c, e));
+            return Task.CompletedTask;
+        }
 
-								await Task.Delay(TimeSpan.FromSeconds(CustomAttributes.messageDeleteSeconds));
-								await e.Interaction.DeleteOriginalResponseAsync();
-								break;
-						}
-						break;
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				DataMethods.SendErrorLogs($"Interaction Error: {ex}");
-			}
-		}
-	}
-	public static class DiscordEventsExtension
-	{
-		public static async Task<DiscordMessage> SendMessageFromInteractionBuilder(this DiscordChannel channel, DiscordInteractionResponseBuilder builder)
-		{
-			DiscordMessageBuilder messageBuilder = new()
-			{
-				Content = builder.Content,
-				//Embed = builder.Embeds.FirstOrDefault()
-			};
-			messageBuilder.AddComponents(builder.Components);
+        private Task OnVoiceStateUpdated(DiscordClient c, VoiceStateUpdateEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                var clientMember = await e.Guild.GetMemberAsync(c.CurrentUser.Id);
+                if (clientMember?.VoiceState?.Channel != null &&
+                    clientMember.VoiceState.Channel.Users.Count < 2)
+                {
+                    var logging = GetService<ILoggingService>();
+                    var playerManager = GetService<IPlayerManagerService>();
+                    
+                    logging.LogInfo("No more users in the voice channel, disconnecting");
+                    await playerManager.DisposePlayerAsync();
+                }
+            });
+            return Task.CompletedTask;
+        }
 
-			return await channel.SendMessageAsync(messageBuilder);
-		}
-	}
+        private async Task GuildDownloadCompletedAsync(DiscordClient client, GuildDownloadCompletedEventArgs e)
+        {
+            await UpdateStatusAsync(client, "Connecting ...");
+            await UpdateStatusAsync(client);
+        }
+
+        private async Task UpdateStatusAsync(DiscordClient client, string newStatus = "")
+        {
+            DiscordActivity discordActivity;
+            if (!string.IsNullOrEmpty(newStatus))
+            {
+                discordActivity = new DiscordActivity(newStatus, ActivityType.Playing);
+            }
+            else
+            {
+                discordActivity = new DiscordActivity(
+                    $"with \"/play\" | v.{BotConstants.Version}", ActivityType.Playing);
+            }
+            await client.UpdateStatusAsync(discordActivity);
+        }
+
+        private async Task InteractionCreatedAsync(DiscordClient client, ComponentInteractionCreateEventArgs e)
+        {
+            try
+            {
+                var services = Bot.GetServiceProvider();
+                var logging = services.GetRequiredService<ILoggingService>();
+                var embedService = services.GetRequiredService<IEmbedService>();
+                var shortcutService = services.GetRequiredService<IShortcutService>();
+
+                string id = e.Values.Length > 0
+                    ? e.Values.FirstOrDefault() // Select Menu
+                    : e.Id; // Button
+
+                logging.LogInfo($"Interaction ID: {id}");
+
+                if (!id.StartsWith("kb_voice_"))
+                    return;
+
+                id = id.Substring(9); // Remove "kb_voice_" prefix
+
+                switch (id)
+                {
+                    case "skip":
+                    case "skip5":
+                    case "skip10":
+                    case "skip50":
+                        int skipCount = id switch
+                        {
+                            "skip5" => 5,
+                            "skip10" => 10,
+                            "skip50" => 50,
+                            _ => 1
+                        };
+                        await HandleVoiceActionButtonAsync(e, client, VoiceAction.Skip, skipCount);
+                        break;
+
+                    case "pause":
+                        await HandleVoiceActionButtonAsync(e, client, VoiceAction.Pause);
+                        break;
+
+                    case "resume":
+                        await HandleVoiceActionButtonAsync(e, client, VoiceAction.Resume);
+                        break;
+
+                    case "stop":
+                        await HandleVoiceActionButtonAsync(e, client, VoiceAction.Stop);
+                        break;
+
+                    case "queue":
+                        var voiceCommandsForQueue = GetService<VoiceSlashCommands>();
+                        var queueEmbed = voiceCommandsForQueue != null 
+                            ? voiceCommandsForQueue.GetQueueEmbedPublic() 
+                            : embedService.CreateSimpleEmbed("Queue", "Service unavailable");
+                        await e.Interaction.CreateResponseAsync(
+                            InteractionResponseType.ChannelMessageWithSource,
+                            new DiscordInteractionResponseBuilder().AddEmbed(queueEmbed).AsEphemeral());
+                        break;
+
+                    case "shortcuts":
+                        var shortcutsDisplay = shortcutService.GetShortcutsDisplay();
+                        await e.Interaction.CreateResponseAsync(
+                            InteractionResponseType.ChannelMessageWithSource,
+                            new DiscordInteractionResponseBuilder()
+                                .WithContent(shortcutsDisplay)
+                                .AsEphemeral());
+                        break;
+
+                    case "seek_forward":
+                        await HandleSeekButtonAsync(e, client, $"+{BotConstants.QuickSeekSeconds}");
+                        break;
+
+                    case "seek_backward":
+                        await HandleSeekButtonAsync(e, client, $"-{BotConstants.QuickSeekSeconds}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                GetService<ILoggingService>().LogError($"Interaction Error: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// Sends an ephemeral response and deletes it after a delay
+        /// </summary>
+        private async Task SendEphemeralResponseAsync(
+            ComponentInteractionCreateEventArgs e,
+            string message)
+        {
+            await e.Interaction.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                    .WithContent(message)
+                    .AsEphemeral());
+
+            await Task.Delay(TimeSpan.FromSeconds(BotConstants.MessageDeleteSeconds));
+            await e.Interaction.DeleteOriginalResponseAsync();
+        }
+
+        private async Task HandleVoiceActionButtonAsync(
+            ComponentInteractionCreateEventArgs e,
+            DiscordClient client,
+            VoiceAction action,
+            int skips = 1)
+        {
+            var voiceCommands = GetService<VoiceSlashCommands>();
+            if (voiceCommands == null)
+            {
+                await SendEphemeralResponseAsync(e, "Voice commands service not available");
+                return;
+            }
+
+            await voiceCommands.HandleVoiceActionFromButton(e, client, action, skips);
+        }
+
+        private async Task HandleSeekButtonAsync(
+            ComponentInteractionCreateEventArgs e,
+            DiscordClient client,
+            string timeString)
+        {
+            var voiceCommands = GetService<VoiceSlashCommands>();
+            if (voiceCommands == null)
+            {
+                await SendEphemeralResponseAsync(e, "Voice commands service not available");
+                return;
+            }
+
+            await voiceCommands.HandleSeekFromButton(e, client, timeString);
+        }
+
+        /// <summary>
+        /// Generic method to get any service from the service provider
+        /// </summary>
+        private T GetService<T>(DiscordClient client = null) where T : class
+        {
+            return Bot.GetServiceProvider().GetRequiredService<T>();
+        }
+    }
 }

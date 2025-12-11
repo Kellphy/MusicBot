@@ -1,4 +1,5 @@
 ﻿using DiscordBot;
+using DiscordBot.Commands;
 using DSharpPlus;
 using Lavalink4NET;
 using Lavalink4NET.Extensions;
@@ -6,32 +7,36 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
+using MusicBot.Models;
+using MusicBot.Services;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MusicBot
 {
+    /// <summary>
+    /// Hosted service that initializes the bot and audio services
+    /// </summary>
     public class BotHostedService : IHostedService
     {
         private readonly Bot _bot;
         private readonly IAudioService _audioService;
+        private readonly ILoggingService _loggingService;
 
-        public BotHostedService(Bot bot, IAudioService audioService)
+        public BotHostedService(Bot bot, IAudioService audioService, ILoggingService loggingService)
         {
             _bot = bot;
             _audioService = audioService;
+            _loggingService = loggingService;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             // Start Lavalink audio service first
             await _audioService.StartAsync(cancellationToken);
-            DataMethods.SendLogs("Lavalink AudioService started and connected!");
+            _loggingService.LogInfo("Lavalink AudioService started and connected!");
             
             // Bot is already initialized in constructor
             await Task.CompletedTask;
@@ -43,50 +48,77 @@ namespace MusicBot
         }
     }
 
+    /// <summary>
+    /// Application startup configuration
+    /// </summary>
     public class Startup
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            // Load config first to get token
-            var json = string.Empty;
-            if (!File.Exists("config.json"))
-            {
-                DataMethods.SendErrorLogs("config.json is missing from your directory");
-                return;
-            }
-
-            using (var fs = File.OpenRead("config.json"))
-            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                json = sr.ReadToEnd();
+            RegisterCoreServices(services);
+            var config = LoadConfiguration(services);
+            RegisterApplicationServices(services);
+            RegisterDiscordClient(services, config);
+            RegisterLavalink(services);
             
-            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
-            CustomAttributes.configJson = configJson;
+            services.AddSingleton<Bot>();
+            services.AddHostedService<BotHostedService>();
+        }
 
-            // Create and register DiscordClient
+        private void RegisterCoreServices(IServiceCollection services)
+        {
+            services.AddSingleton<ILoggingService, LoggingService>();
+            
+            // Create and register pre-loaded configuration service
+            var loggingService = new LoggingService();
+            var configService = new ConfigurationService(loggingService);
+            
+            if (!configService.LoadConfiguration())
+            {
+                throw new InvalidOperationException("Failed to load configuration");
+            }
+            
+            services.AddSingleton<IConfigurationService>(configService);
+        }
+
+        private BotConfiguration LoadConfiguration(IServiceCollection services)
+        {
+            var serviceProvider = services.BuildServiceProvider();
+            var configService = serviceProvider.GetRequiredService<IConfigurationService>();
+            return configService.Configuration;
+        }
+
+        private void RegisterApplicationServices(IServiceCollection services)
+        {
+            services.AddSingleton<IShortcutService, ShortcutService>();
+            services.AddSingleton<IEmbedService, EmbedService>();
+            services.AddSingleton<IButtonService, ButtonService>();
+            services.AddSingleton<IMusicService, MusicService>();
+            services.AddSingleton<IPlayerManagerService, PlayerManagerService>();
+            services.AddSingleton<IProgressTrackerService, ProgressTrackerService>();
+            services.AddSingleton<VoiceSlashCommands>();
+        }
+
+        private void RegisterDiscordClient(IServiceCollection services, BotConfiguration config)
+        {
             var discordConfig = new DiscordConfiguration
             {
-                Token = configJson.Token,
+                Token = config.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Error,
                 Intents = DiscordIntents.AllUnprivileged,
             };
 
-            var discordClient = new DiscordClient(discordConfig);
-            services.AddSingleton(discordClient);
+            services.AddSingleton(new DiscordClient(discordConfig));
+        }
 
-            // Configure Lavalink based on OS
-            string endpointHost;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                endpointHost = "127.0.0.1";
-            }
-            else
-            {
-                endpointHost = "c-lvl";
-            }
+        private void RegisterLavalink(IServiceCollection services)
+        {
+            var endpointHost = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
+                ? "127.0.0.1" 
+                : "c-lvl";
 
-            // Add Lavalink4NET services (after DiscordClient is registered)
             services.AddLavalink();
             services.ConfigureLavalink(config =>
             {
@@ -94,12 +126,6 @@ namespace MusicBot
                 config.Passphrase = "youshallnotpass";
                 config.ReadyTimeout = TimeSpan.FromSeconds(30);
             });
-
-            // Register Bot as singleton
-            services.AddSingleton<Bot>();
-            
-            // Add hosted service to initialize bot
-            services.AddHostedService<BotHostedService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env) { }

@@ -5,98 +5,82 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using MusicBot.Events;
-using Newtonsoft.Json;
+using MusicBot.Models;
+using MusicBot.Services;
 using System;
-using System.IO;
-using System.Text;
 
 namespace DiscordBot
 {
-	public struct ConfigJson
-    {
-        [JsonProperty("token")]
-        public string Token { get; private set; }
-        [JsonProperty("prefix")]
-        public string Prefix { get; private set; }
-		[JsonProperty("isOwnerStarted")]
-		public bool IsOwnerStarted { get; private set; }
-	}
+    /// <summary>
+    /// Main bot class that initializes Discord client and commands
+    /// </summary>
     public class Bot
     {
         public DiscordClient Client { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
 
         private readonly IServiceProvider _services;
+        private readonly ILoggingService _loggingService;
+        private readonly IConfigurationService _configurationService;
+        private readonly IShortcutService _shortcutService;
         private static IServiceProvider _staticServiceProvider;
 
+        /// <summary>
+        /// Gets the service provider (for backward compatibility)
+        /// </summary>
         public static IServiceProvider GetServiceProvider() => _staticServiceProvider;
 
-        public Bot(DiscordClient discordClient, IServiceProvider services)
+        public Bot(
+            DiscordClient discordClient,
+            IServiceProvider services,
+            ILoggingService loggingService,
+            IConfigurationService configurationService,
+            IShortcutService shortcutService)
         {
-            Console.Clear();
-            DataMethods.SendKellphy();
-            DataMethods.SendLogs($"Version: {CustomAttributes.version}");
-
             _services = services;
+            _loggingService = loggingService;
+            _configurationService = configurationService;
+            _shortcutService = shortcutService;
             _staticServiceProvider = services;
-            
-            // Use the injected DiscordClient
             Client = discordClient;
 
+            loggingService.ShowBanner();
+            loggingService.LogInfo($"Version: {BotConstants.Version}");
+
+            _shortcutService.LoadShortcuts();
+            SetupInteractivity();
+            RegisterCommands();
+            
+            Client.ConnectAsync();
+            new DiscordEvents().EventsFeedback(Client);
+
+            _loggingService.LogInfo("Bot initialized successfully");
+        }
+
+        private void SetupInteractivity()
+        {
             Client.UseInteractivity(new InteractivityConfiguration
             {
-                //How much to wait for a command
                 Timeout = TimeSpan.FromMinutes(5)
             });
+        }
 
-            //Setup commands
+        private void RegisterCommands()
+        {
             var commandsConfig = new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { CustomAttributes.configJson.Prefix },
+                StringPrefixes = new[] { _configurationService.Configuration.Prefix },
                 EnableDms = false,
                 EnableMentionPrefix = true,
                 DmHelp = false,
                 EnableDefaultHelp = false,
-                Services = services,
+                Services = _services,
             };
-            var slashConfig = new SlashCommandsConfiguration
-            {
-                Services = _services
-            };
+
             Commands = Client.UseCommandsNext(commandsConfig);
-            Commands.RegisterCommands<AdminCommands>();
-            var slashCommands = Client.UseSlashCommands(slashConfig);
+            
+            var slashCommands = Client.UseSlashCommands(new SlashCommandsConfiguration { Services = _services });
             slashCommands.RegisterCommands<VoiceSlashCommands>();
-
-            //slash.SlashCommandErrored += OnSlashCommandError;
-            //slash.SlashCommandExecuted += OnSlashCommandExecute;
-            //Connect bot
-            Client.ConnectAsync();
-
-			new DiscordEvents().EventsFeedback(Client);
-		}
-
-
-        //private async Task OnSlashCommandExecute(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
-        //{
-        //    DataMethods.SendLogs(new MyContext(e.Context));
-        //    await Task.CompletedTask;
-        //}
-        //private async Task OnSlashCommandError(SlashCommandsExtension sender, SlashCommandErrorEventArgs e)
-        //{
-        //    VoiceCommands voice = new VoiceCommands();
-        //    if (e.Exception is ArgumentException)
-        //    {
-        //        await voice.Help(new MyContext(e.Context), e.Context.CommandName);
-        //    }
-        //    else if (e.Exception is ChecksFailedException)
-        //    {
-        //        DataMethods.SendErrorLogs($"WARNING: {e.Context.User.Username}, you do not have the required permissions or you keep spamming the command.");
-        //    }
-        //    else
-        //    {
-        //        DataMethods.SendErrorLogs($"{e.Context.Guild.Name} | {e.Context.Channel} | {e.Context.User.Username} | Error: {e.Exception}");
-        //    }
-        //}
+        }
     }
 }
